@@ -34,7 +34,7 @@ class UndirectedNetwork:
         return int(np.sum(self.A)*0.5)
 
     def show(self, ax):
-        ax.spy(self.A, marker=".", markersize=1)
+        ax.imshow(self.A, cmap="binary")
 
 
 class Erdos_Renyi(UndirectedNetwork):
@@ -81,21 +81,26 @@ if __name__ == "__main__":
     import time
 
     nodes = 5000
-    prob = 0.01
+    prob = 0.1
     seed = 2
 
     ti = time.time()
     net_networkx_fast = nx.fast_gnp_random_graph(n=nodes, p=prob, seed=seed)
     tf = time.time()
     print(f"fast_gnp_random_graph (networkx) = {tf-ti} sec")
+    fig, ax = plt.subplots(figsize=(8,8))
+    ax.imshow(nx.to_numpy_array(net_networkx_fast), cmap="binary")
+    plt.show()
 
     ti = time.time()
     net_numpy = Erdos_Renyi(n=nodes, p=prob, seed=seed, check_adjacency=False)
     tf = time.time()
-    print(f"\nrandom graph (numpy) = {tf-ti} sec")
-    
+    print(f"\nrandom graph (numpy) = {tf-ti} sec")  
     print(f"nodes = {net_numpy.get_numNodes()}")
     print(f"edges = {net_numpy.get_numEdges()}")
+    fig, ax = plt.subplots(figsize=(8,8))
+    net_numpy.show(ax)
+    plt.show()
 
 
     blocks = 3
@@ -113,7 +118,7 @@ if __name__ == "__main__":
     tf = time.time()
     print(f"\nstochastic_block_model (networkx) = {tf-ti} sec")
     fig, ax = plt.subplots(figsize=(8,8))
-    ax.spy(nx.adjacency_matrix(blocks_networkx), marker=".", markersize=1)
+    ax.imshow(nx.to_numpy_array(blocks_networkx), cmap="binary")
     plt.show()
 
     ti = time.time()
