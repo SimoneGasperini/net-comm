@@ -18,6 +18,8 @@ class UndirectedNetwork:
         self.A = adjacency
         if check_adjacency:
             self._check_adjacency()
+        self.number_of_nodes = self.A.shape[0]
+        self.number_of_edges = np.int(np.sum(self.A)*0.5)
 
     def _check_adjacency(self):
         if self.A.ndim != 2:
@@ -27,11 +29,24 @@ class UndirectedNetwork:
         if not np.allclose(self.A, self.A.T, rtol=1e-05, atol=1e-08):
             raise NotImplementedError("Only undirected networks are supported: the matrix is not symmetric")
 
-    def get_numNodes(self):
-        return self.A.shape[0]
+    def degrees(self):
+        return {n : np.sum(self.A[n,:]) for n in range(self.number_of_nodes)}
 
-    def get_numEdges(self):
-        return int(np.sum(self.A)*0.5)
+    def set_nodes_community(self, num, random=True):
+        self.number_of_communities = num
+        if random:
+            self.nodes_community = {n : np.random.randint(0,num) for n in range(self.number_of_nodes)}
+        else:
+            raise NotImplementedError("Work in progress")
+
+    def modularity(self):
+        n = self.number_of_nodes
+        c = self.number_of_communities
+        S = np.vstack([[i]*n for i in range(c)]) == np.array(list(self.nodes_community.values()))
+        d = np.array(list(self.degrees().values()))
+        norm = 1/(2*self.number_of_edges)
+        B = self.A - norm*np.outer(d,d)
+        return norm * np.trace(S @ B @ S.T)
 
     def show(self, ax):
         ax.imshow(self.A, cmap="binary")
@@ -95,9 +110,9 @@ if __name__ == "__main__":
     ti = time.time()
     net_numpy = Erdos_Renyi(n=nodes, p=prob, seed=seed, check_adjacency=False)
     tf = time.time()
-    print(f"\nrandom graph (numpy) = {tf-ti} sec")  
-    print(f"nodes = {net_numpy.get_numNodes()}")
-    print(f"edges = {net_numpy.get_numEdges()}")
+    print(f"\nrandom graph (numpy) = {tf-ti} sec")
+    print(f"nodes = {net_numpy.number_of_nodes}")
+    print(f"edges = {net_numpy.number_of_edges}")
     fig, ax = plt.subplots(figsize=(8,8))
     net_numpy.show(ax)
     plt.show()
@@ -117,6 +132,12 @@ if __name__ == "__main__":
     blocks_networkx = nx.stochastic_block_model(blocks_sizes, prob_matrix)
     tf = time.time()
     print(f"\nstochastic_block_model (networkx) = {tf-ti} sec")
+    communities = [set(range(0,100)), set(range(100,160)), set(range(160,320))]
+    ti = time.time()
+    mod = nx.algorithms.community.modularity(blocks_networkx, communities)
+    tf = time.time()
+    print(f"mod (exact partitions) = {mod}")
+    print(f"modularity (networkx) = {tf-ti} sec")
     fig, ax = plt.subplots(figsize=(8,8))
     ax.imshow(nx.to_numpy_array(blocks_networkx), cmap="binary")
     plt.show()
@@ -125,7 +146,13 @@ if __name__ == "__main__":
     blocks_numpy = Random_Blocks(blocks_sizes, prob_matrix,
                                  check_parameters=False, check_adjacency=False)
     tf = time.time()
-    print(f"stochastic_block_model (numpy) = {tf-ti} sec")
+    print(f"\nstochastic_block_model (numpy) = {tf-ti} sec")
+    blocks_numpy.set_nodes_community(num=blocks)
+    ti = time.time()
+    mod = blocks_numpy.modularity()
+    tf = time.time()
+    print(f"mod (random partitions) = {mod}")
+    print(f"modularity (numpy) = {tf-ti} sec")
     fig, ax = plt.subplots(figsize=(8,8))
     blocks_numpy.show(ax)
     plt.show()
