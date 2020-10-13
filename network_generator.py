@@ -18,8 +18,6 @@ class UndirectedNetwork:
         self.A = adjacency
         if check_adjacency:
             self._check_adjacency()
-        self.number_of_nodes = self.A.shape[0]
-        self.number_of_edges = np.int(np.sum(self.A)*0.5)
 
     def _check_adjacency(self):
         if self.A.ndim != 2:
@@ -29,24 +27,37 @@ class UndirectedNetwork:
         if not np.allclose(self.A, self.A.T, rtol=1e-05, atol=1e-08):
             raise NotImplementedError("Only undirected networks are supported: the matrix is not symmetric")
 
-    def degrees(self):
-        return {n : np.sum(self.A[n,:]) for n in range(self.number_of_nodes)}
+    def number_of_nodes(self):
+        return self.A.shape[0]
 
-    def set_nodes_community(self, num, random=True):
-        self.number_of_communities = num
-        if random:
-            self.nodes_community = {n : np.random.randint(0,num) for n in range(self.number_of_nodes)}
-        else:
-            raise NotImplementedError("Work in progress")
+    def number_of_edges(self):
+        return int(np.sum(self.A)*0.5)
+
+    def degrees_of_nodes(self):
+        nodes = self.number_of_nodes()
+        return np.array([np.sum(self.A[n,:]) for n in range(nodes)], dtype=int)
+
+    def set_nodes_community(self, communities):
+        self.number_of_communities = len(communities)
+        nodes = self.number_of_nodes()
+        self.nodes_community = np.empty(nodes, dtype=int)
+        for i,comm in enumerate(communities):
+            for n in comm:
+                self.nodes_community[n] = i
+
+    def _matrix_E(self, S, norm=1.):
+        return norm * (S @ self.A @ S.T)
+
+    def _vector_A(self, S, norm=1.):
+            return norm * (S @ self.degrees_of_nodes())
 
     def modularity(self):
-        n = self.number_of_nodes
+        n = self.number_of_nodes()
+        m = self.number_of_edges()
         c = self.number_of_communities
-        S = np.vstack([[i]*n for i in range(c)]) == np.array(list(self.nodes_community.values()))
-        d = np.array(list(self.degrees().values()))
-        norm = 1/(2*self.number_of_edges)
-        B = self.A - norm*np.outer(d,d)
-        return norm * np.trace(S @ B @ S.T)
+        S = np.vstack([[i]*n for i in range(c)]) == self.nodes_community
+        norm = 1/(2*m)
+        return np.sum(np.diag( self._matrix_E(S,norm) ) - np.square( self._vector_A(S,norm) ))
 
     def show(self, ax):
         ax.imshow(self.A, cmap="binary")
@@ -95,31 +106,8 @@ if __name__ == "__main__":
     import pylab as plt
     import time
 
-    nodes = 5000
-    prob = 0.1
-    seed = 2
-
-    ti = time.time()
-    net_networkx_fast = nx.fast_gnp_random_graph(n=nodes, p=prob, seed=seed)
-    tf = time.time()
-    print(f"fast_gnp_random_graph (networkx) = {tf-ti} sec")
-    fig, ax = plt.subplots(figsize=(8,8))
-    ax.imshow(nx.to_numpy_array(net_networkx_fast), cmap="binary")
-    plt.show()
-
-    ti = time.time()
-    net_numpy = Erdos_Renyi(n=nodes, p=prob, seed=seed, check_adjacency=False)
-    tf = time.time()
-    print(f"\nrandom graph (numpy) = {tf-ti} sec")
-    print(f"nodes = {net_numpy.number_of_nodes}")
-    print(f"edges = {net_numpy.number_of_edges}")
-    fig, ax = plt.subplots(figsize=(8,8))
-    net_numpy.show(ax)
-    plt.show()
-
-
     blocks = 3
-    blocks_sizes = np.array([100, 60, 160])
+    blocks_sizes = np.array([1000, 600, 1600])
     prob_matrix = np.zeros(shape=(blocks,blocks))
     for i in range(blocks-1):
         for j in range(i+1, blocks):
@@ -132,12 +120,15 @@ if __name__ == "__main__":
     blocks_networkx = nx.stochastic_block_model(blocks_sizes, prob_matrix)
     tf = time.time()
     print(f"\nstochastic_block_model (networkx) = {tf-ti} sec")
-    communities = [set(range(0,100)), set(range(100,160)), set(range(160,320))]
+
+    perms = np.random.permutation(range(0,3200))
+    communities = [perms[:1000], perms[1000:1600], perms[1600:3200]]
+
     ti = time.time()
     mod = nx.algorithms.community.modularity(blocks_networkx, communities)
     tf = time.time()
-    print(f"mod (exact partitions) = {mod}")
-    print(f"modularity (networkx) = {tf-ti} sec")
+    print(f"modularity (networkx) = {mod}")
+    print(f"time (networkx) = {tf-ti} sec")
     fig, ax = plt.subplots(figsize=(8,8))
     ax.imshow(nx.to_numpy_array(blocks_networkx), cmap="binary")
     plt.show()
@@ -147,12 +138,12 @@ if __name__ == "__main__":
                                  check_parameters=False, check_adjacency=False)
     tf = time.time()
     print(f"\nstochastic_block_model (numpy) = {tf-ti} sec")
-    blocks_numpy.set_nodes_community(num=blocks)
+    blocks_numpy.set_nodes_community(communities)
     ti = time.time()
     mod = blocks_numpy.modularity()
     tf = time.time()
-    print(f"mod (random partitions) = {mod}")
-    print(f"modularity (numpy) = {tf-ti} sec")
+    print(f"modularity (numpy) = {mod}")
+    print(f"time (numpy) = {tf-ti} sec")
     fig, ax = plt.subplots(figsize=(8,8))
     blocks_numpy.show(ax)
     plt.show()
