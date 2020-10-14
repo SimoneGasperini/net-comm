@@ -1,15 +1,18 @@
 import numpy as np
+from tqdm import trange
 
 def ones_random_symm(dim, prob):
-    mat = np.random.rand(dim,dim)
-    mat = np.where(mat < prob, 1, 0)
+    rand = np.random.rand(dim,dim)
+    mat = np.empty(shape=rand.shape, dtype=int)
+    mat = np.where(rand < prob, 1, 0)
     mat = np.triu(mat) + np.triu(mat).T - np.diag(np.diag(mat))
     return mat
 
 def ones_random(shape, prob):
     rows, cols = shape
-    mat = np.random.rand(rows,cols)
-    mat = np.where(mat < prob, 1, 0)
+    rand = np.random.rand(rows,cols)
+    mat = np.empty(shape=rand.shape, dtype=int)
+    mat = np.where(rand < prob, 1, 0)
     return mat
 
 class UndirectedNetwork:
@@ -18,6 +21,7 @@ class UndirectedNetwork:
         self.A = adjacency
         if check_adjacency:
             self._check_adjacency()
+        self.edge_list = self._edge_list()
 
     def _check_adjacency(self):
         if self.A.ndim != 2:
@@ -27,6 +31,10 @@ class UndirectedNetwork:
         if not np.allclose(self.A, self.A.T, rtol=1e-05, atol=1e-08):
             raise NotImplementedError("Only undirected networks are supported: the matrix is not symmetric")
 
+    def _edge_list(self):
+        i_list, j_list = np.nonzero(np.triu(self.A))
+        return list(zip(i_list,j_list))
+
     def number_of_nodes(self):
         return self.A.shape[0]
 
@@ -34,30 +42,70 @@ class UndirectedNetwork:
         return int(np.sum(self.A)*0.5)
 
     def degrees_of_nodes(self):
-        nodes = self.number_of_nodes()
-        return np.array([np.sum(self.A[n,:]) for n in range(nodes)], dtype=int)
+        n = self.number_of_nodes()
+        return {node : np.sum(self.A[node,:]) for node in range(n)}
 
-    def set_nodes_community(self, communities):
-        self.number_of_communities = len(communities)
-        nodes = self.number_of_nodes()
-        self.nodes_community = np.empty(nodes, dtype=int)
-        for i,comm in enumerate(communities):
-            for n in comm:
-                self.nodes_community[n] = i
-
-    def _matrix_E(self, S, norm=1.):
-        return norm * (S @ self.A @ S.T)
-
-    def _vector_A(self, S, norm=1.):
-            return norm * (S @ self.degrees_of_nodes())
+    def nodes_in_community(self, comm):
+        n = self.number_of_nodes()
+        return np.array([node for node in range(n) if self.nodes_community[node]==comm])
 
     def modularity(self):
         n = self.number_of_nodes()
-        m = self.number_of_edges()
         c = self.number_of_communities
-        S = np.vstack([[i]*n for i in range(c)]) == self.nodes_community
-        norm = 1/(2*m)
-        return np.sum(np.diag( self._matrix_E(S,norm) ) - np.square( self._vector_A(S,norm) ))
+        community_of_node = np.array([self.nodes_community[node] for node in range(n)])
+        S = np.vstack([[i]*n for i in range(c)]) == community_of_node
+        degree_dict = self.degrees_of_nodes()
+        k = np.array([degree_dict[node] for node in range(n)])
+        norm = 1/(2*self.number_of_edges())
+        B = self.A - (norm*np.outer(k,k))
+        return norm * np.trace(S @ B @ S.T)
+
+    def clustering(self):
+        n = self.number_of_nodes()
+        m = self.number_of_edges()
+        k = self.degrees_of_nodes()
+        q = self.modularity()
+        norm = 1./(2.*m)
+        a = np.array([norm * k[i] for i in range(n)])
+        ij_dQ = {(i,j) : 2*norm - 2*k[i]*k[j]*norm*norm for (i,j) in self.edge_list}
+
+        mod_list = []
+        for iteration in trange(n-1):
+            mod_list.append(q)
+            delta_q = np.max(list(ij_dQ.values()))
+            if delta_q <= 0:
+                print(f"\niteration = {iteration}")
+                print(f"max delta_q = {delta_q}")
+                break
+            for ij in ij_dQ:
+                if ij_dQ[ij] == delta_q:
+                    comms = ij
+                    break
+            c1, c2 = int(min(comms)), int(max(comms))
+            for node in self.nodes_in_community(c2):
+                self.nodes_community[node] = c1
+            self.number_of_communities -= 1
+            for k in range(self.number_of_communities):
+                for (i,j) in ij_dQ:
+                    if (k,i) in ij_dQ:
+                        k_is_connected_to_i = True if ij_dQ[(k,i)] != 0 else False
+                    if (k,j) in ij_dQ:
+                        k_is_connected_to_j = True if ij_dQ[(k,j)] != 0 else False
+                    if (j,k) in ij_dQ and (i,k) in ij_dQ:
+                        if k_is_connected_to_i and k_is_connected_to_j:
+                            ij_dQ[(j,k)] = ij_dQ[(i,k)] + ij_dQ[(j,k)]
+                        if k_is_connected_to_i and not k_is_connected_to_j:
+                            ij_dQ[(j,k)] = ij_dQ[(i,k)] - 2*a[j]*a[k]
+                    if (j,k) in ij_dQ:
+                        if not k_is_connected_to_i and k_is_connected_to_j:
+                            ij_dQ[(j,k)] = ij_dQ[(j,k)] - 2*a[i]*a[k]
+                    if i == c2 or j == c2:
+                        ij_dQ[(i,j)] = 0.
+            a[c1] += a[c2]
+            a[c2] = 0.
+            q += delta_q
+
+        return mod_list
 
     def show(self, ax):
         ax.imshow(self.A, cmap="binary")
@@ -82,7 +130,7 @@ class Random_Blocks(UndirectedNetwork):
         if check_parameters:
             self._check_parameters()
         n = np.sum(sizes)
-        A = np.zeros(shape=(n,n))
+        A = np.zeros(shape=(n,n), dtype=int)
         for i in range(self.blocks):
             row = col = np.sum(sizes[:i])
             for j in range(i, self.blocks):
@@ -92,8 +140,11 @@ class Random_Blocks(UndirectedNetwork):
                 A[row:row+r, col:col+c] = ones_random_symm(r,p) if i==j else ones_random((r,c),p)
                 col += c
             row += r
-        A = np.triu(A) + np.triu(A).T - np.diag(np.diag(A))
+        A = np.triu(A) + np.triu(A).T
+        A -= np.diag(np.diag(A))
         UndirectedNetwork.__init__(self, A, check_adjacency)
+        self.number_of_communities = self.number_of_nodes()
+        self.nodes_community = {n : n for n in range(self.number_of_nodes())}
 
     def _check_parameters(self):
         if self.blocks != self.p.shape[0]:
@@ -107,7 +158,7 @@ if __name__ == "__main__":
     import time
 
     blocks = 3
-    blocks_sizes = np.array([1000, 600, 1600])
+    blocks_sizes = np.array([100, 60, 160])
     prob_matrix = np.zeros(shape=(blocks,blocks))
     for i in range(blocks-1):
         for j in range(i+1, blocks):
@@ -119,26 +170,23 @@ if __name__ == "__main__":
     ti = time.time()
     blocks_networkx = nx.stochastic_block_model(blocks_sizes, prob_matrix)
     tf = time.time()
-    print(f"\nstochastic_block_model (networkx) = {tf-ti} sec")
+    print(f"stochastic_block_model (networkx) = {tf-ti} sec")
 
-    perms = np.random.permutation(range(0,3200))
-    communities = [perms[:1000], perms[1000:1600], perms[1600:3200]]
+    perms = np.random.permutation(range(0,320))
+    partitions = [np.array([c], dtype=int) for c in range(blocks_networkx.number_of_nodes())]
+    #partitions = [range(0,100), range(100,160), range(160,320)]
 
     ti = time.time()
-    mod = nx.algorithms.community.modularity(blocks_networkx, communities)
+    mod = nx.algorithms.community.modularity(blocks_networkx, partitions)
     tf = time.time()
     print(f"modularity (networkx) = {mod}")
     print(f"time (networkx) = {tf-ti} sec")
-    fig, ax = plt.subplots(figsize=(8,8))
-    ax.imshow(nx.to_numpy_array(blocks_networkx), cmap="binary")
-    plt.show()
 
     ti = time.time()
     blocks_numpy = Random_Blocks(blocks_sizes, prob_matrix,
                                  check_parameters=False, check_adjacency=False)
     tf = time.time()
     print(f"\nstochastic_block_model (numpy) = {tf-ti} sec")
-    blocks_numpy.set_nodes_community(communities)
     ti = time.time()
     mod = blocks_numpy.modularity()
     tf = time.time()
@@ -147,3 +195,5 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(figsize=(8,8))
     blocks_numpy.show(ax)
     plt.show()
+
+    #modularity_list = blocks_numpy.clustering()
