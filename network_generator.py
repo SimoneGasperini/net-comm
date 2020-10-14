@@ -1,4 +1,5 @@
 import numpy as np
+import networkx as nx
 from tqdm import trange
 
 def ones_random_symm(dim, prob):
@@ -22,6 +23,7 @@ class UndirectedNetwork:
         if check_adjacency:
             self._check_adjacency()
         self.edge_list = self._edge_list()
+        self.netx = nx.Graph(self.A)
 
     def _check_adjacency(self):
         if self.A.ndim != 2:
@@ -49,22 +51,14 @@ class UndirectedNetwork:
         n = self.number_of_nodes()
         return np.array([node for node in range(n) if self.nodes_community[node]==comm])
 
-    def modularity(self):
-        n = self.number_of_nodes()
-        c = self.number_of_communities
-        community_of_node = np.array([self.nodes_community[node] for node in range(n)])
-        S = np.vstack([[i]*n for i in range(c)]) == community_of_node
-        degree_dict = self.degrees_of_nodes()
-        k = np.array([degree_dict[node] for node in range(n)])
-        norm = 1/(2*self.number_of_edges())
-        B = self.A - (norm*np.outer(k,k))
-        return norm * np.trace(S @ B @ S.T)
+    def modularity(self, communities):
+        return nx.algorithms.community.modularity(self.netx, communities)
 
     def clustering(self):
         n = self.number_of_nodes()
         m = self.number_of_edges()
         k = self.degrees_of_nodes()
-        q = self.modularity()
+        q = self.modularity(self.nodes_community)
         norm = 1./(2.*m)
         a = np.array([norm * k[i] for i in range(n)])
         ij_dQ = {(i,j) : 2*norm - 2*k[i]*k[j]*norm*norm for (i,j) in self.edge_list}
@@ -144,7 +138,7 @@ class Random_Blocks(UndirectedNetwork):
         A -= np.diag(np.diag(A))
         UndirectedNetwork.__init__(self, A, check_adjacency)
         self.number_of_communities = self.number_of_nodes()
-        self.nodes_community = {n : n for n in range(self.number_of_nodes())}
+        self.nodes_community = [np.array([c], dtype=int) for c in range(self.number_of_nodes())]
 
     def _check_parameters(self):
         if self.blocks != self.p.shape[0]:
@@ -153,12 +147,13 @@ class Random_Blocks(UndirectedNetwork):
 
 if __name__ == "__main__":
 
-    import networkx as nx
     import pylab as plt
     import time
 
     blocks = 3
-    blocks_sizes = np.array([100, 60, 160])
+    n1=100; n2=60; n3=160
+    n = n1+n2+n3
+    blocks_sizes = np.array([n1, n2, n3])
     prob_matrix = np.zeros(shape=(blocks,blocks))
     for i in range(blocks-1):
         for j in range(i+1, blocks):
@@ -172,9 +167,10 @@ if __name__ == "__main__":
     tf = time.time()
     print(f"stochastic_block_model (networkx) = {tf-ti} sec")
 
-    perms = np.random.permutation(range(0,320))
-    partitions = [np.array([c], dtype=int) for c in range(blocks_networkx.number_of_nodes())]
-    #partitions = [range(0,100), range(100,160), range(160,320)]
+    perms = np.random.permutation(range(n))
+    partitions = [np.array([c], dtype=int) for c in range(n)]
+    #partitions = [range(0,n1), range(n1,n1+n2), range(n1+n2,n)]
+    #partitions = [perms[0:n1], perms[n1:n1+n2], perms[n1+n2:n]]
 
     ti = time.time()
     mod = nx.algorithms.community.modularity(blocks_networkx, partitions)
@@ -188,7 +184,7 @@ if __name__ == "__main__":
     tf = time.time()
     print(f"\nstochastic_block_model (numpy) = {tf-ti} sec")
     ti = time.time()
-    mod = blocks_numpy.modularity()
+    mod = blocks_numpy.modularity(partitions)
     tf = time.time()
     print(f"modularity (numpy) = {mod}")
     print(f"time (numpy) = {tf-ti} sec")
