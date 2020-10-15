@@ -1,6 +1,5 @@
 import numpy as np
 import networkx as nx
-from tqdm import trange
 
 def ones_random_symm(dim, prob):
     rand = np.random.rand(dim,dim)
@@ -47,59 +46,31 @@ class UndirectedNetwork:
         n = self.number_of_nodes()
         return {node : np.sum(self.A[node,:]) for node in range(n)}
 
-    def nodes_in_community(self, comm):
+    def get_nodes_in_community(self, comm):
         n = self.number_of_nodes()
-        return np.array([node for node in range(n) if self.nodes_community[node]==comm])
+        return np.array([node for node in range(n) if self.node_community[node]==comm])
 
-    def modularity(self, communities):
+    def modularity_nx(self, partitions=None):
+        communities = partitions if partitions is not None else self.partitions
         return nx.algorithms.community.modularity(self.netx, communities)
 
-    def clustering(self):
-        n = self.number_of_nodes()
-        m = self.number_of_edges()
-        k = self.degrees_of_nodes()
-        q = self.modularity(self.nodes_community)
-        norm = 1./(2.*m)
-        a = np.array([norm * k[i] for i in range(n)])
-        ij_dQ = {(i,j) : 2*norm - 2*k[i]*k[j]*norm*norm for (i,j) in self.edge_list}
+    def clustering_nx(self):
+        communities = nx.algorithms.community.greedy_modularity_communities(self.netx)
+        self.number_of_partitions = len(communities)
+        self.partitions = communities
 
-        mod_list = []
-        for iteration in trange(n-1):
-            mod_list.append(q)
-            delta_q = np.max(list(ij_dQ.values()))
-            if delta_q <= 0:
-                print(f"\niteration = {iteration}")
-                print(f"max delta_q = {delta_q}")
-                break
-            for ij in ij_dQ:
-                if ij_dQ[ij] == delta_q:
-                    comms = ij
-                    break
-            c1, c2 = int(min(comms)), int(max(comms))
-            for node in self.nodes_in_community(c2):
-                self.nodes_community[node] = c1
-            self.number_of_communities -= 1
-            for k in range(self.number_of_communities):
-                for (i,j) in ij_dQ:
-                    if (k,i) in ij_dQ:
-                        k_is_connected_to_i = True if ij_dQ[(k,i)] != 0 else False
-                    if (k,j) in ij_dQ:
-                        k_is_connected_to_j = True if ij_dQ[(k,j)] != 0 else False
-                    if (j,k) in ij_dQ and (i,k) in ij_dQ:
-                        if k_is_connected_to_i and k_is_connected_to_j:
-                            ij_dQ[(j,k)] = ij_dQ[(i,k)] + ij_dQ[(j,k)]
-                        if k_is_connected_to_i and not k_is_connected_to_j:
-                            ij_dQ[(j,k)] = ij_dQ[(i,k)] - 2*a[j]*a[k]
-                    if (j,k) in ij_dQ:
-                        if not k_is_connected_to_i and k_is_connected_to_j:
-                            ij_dQ[(j,k)] = ij_dQ[(j,k)] - 2*a[i]*a[k]
-                    if i == c2 or j == c2:
-                        ij_dQ[(i,j)] = 0.
-            a[c1] += a[c2]
-            a[c2] = 0.
-            q += delta_q
-
-        return mod_list
+    def draw(self, ax, community_colors=False):
+        if not community_colors or self.number_of_partitions == 1:
+            colors = "#1f78b4"
+        else:
+            p = self.number_of_partitions
+            col = np.linspace(0,1,p)
+            colors = np.empty(self.number_of_nodes())
+            for node in range(self.number_of_nodes()):
+                for i,p in enumerate(self.partitions):
+                    if node in p:
+                        colors[node] = col[i]
+        nx.draw(self.netx, ax=ax, width=0.2, node_size=50, node_color=colors, cmap="viridis")
 
     def show(self, ax):
         ax.imshow(self.A, cmap="binary")
@@ -119,6 +90,7 @@ class Random_Blocks(UndirectedNetwork):
     def __init__(self, sizes, p_matrix, seed=None, check_parameters=True, check_adjacency=True):
         self.blocks = sizes.size
         self.block_sizes = sizes
+        self.p = prob_matrix
         if seed is not None:
             np.random.seed(seed)
         if check_parameters:
@@ -137,8 +109,8 @@ class Random_Blocks(UndirectedNetwork):
         A = np.triu(A) + np.triu(A).T
         A -= np.diag(np.diag(A))
         UndirectedNetwork.__init__(self, A, check_adjacency)
-        self.number_of_communities = self.number_of_nodes()
-        self.nodes_community = [np.array([c], dtype=int) for c in range(self.number_of_nodes())]
+        self.number_of_partitions = 1
+        self.partitions = [range(self.number_of_nodes())]
 
     def _check_parameters(self):
         if self.blocks != self.p.shape[0]:
@@ -163,33 +135,26 @@ if __name__ == "__main__":
         prob_matrix[k][k] = 0.1
 
     ti = time.time()
-    blocks_networkx = nx.stochastic_block_model(blocks_sizes, prob_matrix)
+    random_blocks = Random_Blocks(blocks_sizes, prob_matrix,
+                                 check_parameters=True, check_adjacency=True)
     tf = time.time()
-    print(f"stochastic_block_model (networkx) = {tf-ti} sec")
-
-    perms = np.random.permutation(range(n))
-    partitions = [np.array([c], dtype=int) for c in range(n)]
-    #partitions = [range(0,n1), range(n1,n1+n2), range(n1+n2,n)]
-    #partitions = [perms[0:n1], perms[n1:n1+n2], perms[n1+n2:n]]
-
-    ti = time.time()
-    mod = nx.algorithms.community.modularity(blocks_networkx, partitions)
-    tf = time.time()
-    print(f"modularity (networkx) = {mod}")
-    print(f"time (networkx) = {tf-ti} sec")
-
-    ti = time.time()
-    blocks_numpy = Random_Blocks(blocks_sizes, prob_matrix,
-                                 check_parameters=False, check_adjacency=False)
-    tf = time.time()
-    print(f"\nstochastic_block_model (numpy) = {tf-ti} sec")
-    ti = time.time()
-    mod = blocks_numpy.modularity(partitions)
-    tf = time.time()
-    print(f"modularity (numpy) = {mod}")
-    print(f"time (numpy) = {tf-ti} sec")
+    print(f"\ntime for RBmodel generation = {tf-ti} sec")
     fig, ax = plt.subplots(figsize=(8,8))
-    blocks_numpy.show(ax)
+    random_blocks.show(ax)
     plt.show()
 
-    #modularity_list = blocks_numpy.clustering()
+    mod1 = random_blocks.modularity_nx()
+    print(f"\nmodularity Q(before clustering) = {mod1}")
+
+    fig, ax = plt.subplots(figsize=(8,8))
+    random_blocks.draw(ax, community_colors=True)
+    plt.show()
+
+    random_blocks.clustering_nx()
+
+    mod2 = random_blocks.modularity_nx()
+    print(f"\nmodularity Q(after clustering) = {mod2}")
+
+    fig, ax = plt.subplots(figsize=(8,8))
+    random_blocks.draw(ax, community_colors=True)
+    plt.show()
