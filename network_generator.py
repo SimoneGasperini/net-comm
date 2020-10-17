@@ -92,8 +92,7 @@ class UndirectedNetwork:
         a = np.array([k[i]*q0 for i in range(n)])
         dq_matrix = np.zeros(shape=(n,n))
         for i in range(n):
-            for j in [u for u in self.edge_dict[i]]:
-                if j != i:
+            for j in self.edge_dict[i]:
                     dq_matrix[i][j] = 2.*q0 - 2.*k[i]*k[j]*q0*q0
 
         for _ in trange(n-1, desc="Clustering in progress"):
