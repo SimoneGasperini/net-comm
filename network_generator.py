@@ -191,7 +191,7 @@ if __name__ == "__main__":
     import time
 
     blocks = 3
-    n1=100; n2=60; n3=160
+    n1=200; n2=60; n3=260
     n = n1+n2+n3
     blocks_sizes = np.array([n1, n2, n3])
     prob_matrix = np.zeros(shape=(blocks,blocks))
@@ -212,6 +212,7 @@ if __name__ == "__main__":
     plt.show()
     fig, ax = plt.subplots(figsize=(8,8))
     random_blocks.draw(ax)
+    plt.show()
 
     mod1 = random_blocks.modularity()
     print(f"\nmodularity Q(before clustering) = {mod1}", flush=True)
@@ -223,3 +224,4 @@ if __name__ == "__main__":
     print(f"modularity Q(after clustering) = {mod2}", flush=True)
     fig, ax = plt.subplots(figsize=(8,8))
     random_blocks.draw(ax)
+    plt.show()
