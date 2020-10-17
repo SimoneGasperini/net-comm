@@ -128,10 +128,8 @@ class UndirectedNetwork:
         self.number_of_partitions = len(communities)
         self.partitions = communities
 
-    def draw(self, ax, community_colors=True):
-        if not community_colors or self.number_of_partitions == 1:
-            colors = "#1f78b4"
-        else:
+    def draw_nx(self, ax, col_communities=False):
+        if col_communities and self.number_of_partitions > 1:
             p = self.number_of_partitions
             col = np.linspace(0,1,p)
             colors = np.empty(self.number_of_nodes())
@@ -139,10 +137,22 @@ class UndirectedNetwork:
                 for i,p in enumerate(self.partitions):
                     if node in p:
                         colors[node] = col[i]
+        else:
+            colors = "#1f78b4"
         nx.draw(self.netx, ax=ax, width=0.2, node_size=50, node_color=colors, cmap="viridis")
 
-    def show(self, ax):
-        ax.imshow(self.A, cmap="binary")
+    def show(self, ax, show_communities=False):
+        if show_communities and self.number_of_partitions > 1:
+            perms = np.empty(self.number_of_nodes(), dtype=int)
+            i = 0
+            for comm in self.partitions:
+                for node in comm:
+                    perms[i] = node
+                    i += 1
+            adj = self.A[perms,:][:,perms]
+            ax.imshow(adj, cmap="binary")
+        else:
+            ax.imshow(self.A, cmap="binary")
 
 
 class Erdos_Renyi(UndirectedNetwork):
@@ -176,6 +186,8 @@ class Random_Blocks(UndirectedNetwork):
                 col += c
             row += r
         A = np.triu(A) + np.triu(A).T - np.diag(2*np.diag(A))
+        perms = np.random.permutation(range(n))
+        A = A[perms,:][:,perms]
         UndirectedNetwork.__init__(self, A, check_adjacency)
         self.number_of_partitions = 1
         self.partitions = [range(self.number_of_nodes())]
@@ -191,7 +203,7 @@ if __name__ == "__main__":
     import time
 
     blocks = 3
-    n1=200; n2=60; n3=260
+    n1=200; n2=100; n3=260
     n = n1+n2+n3
     blocks_sizes = np.array([n1, n2, n3])
     prob_matrix = np.zeros(shape=(blocks,blocks))
@@ -210,9 +222,6 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(figsize=(8,8))
     random_blocks.show(ax)
     plt.show()
-    fig, ax = plt.subplots(figsize=(8,8))
-    random_blocks.draw(ax)
-    plt.show()
 
     mod1 = random_blocks.modularity()
     print(f"\nmodularity Q(before clustering) = {mod1}", flush=True)
@@ -223,5 +232,8 @@ if __name__ == "__main__":
     mod2 = random_blocks.modularity()
     print(f"modularity Q(after clustering) = {mod2}", flush=True)
     fig, ax = plt.subplots(figsize=(8,8))
-    random_blocks.draw(ax)
+    random_blocks.draw_nx(ax, col_communities=True)
+    plt.show()
+    fig, ax = plt.subplots(figsize=(8,8))
+    random_blocks.show(ax, show_communities=True)
     plt.show()
