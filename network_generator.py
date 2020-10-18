@@ -4,7 +4,7 @@ from tqdm import trange
 
 def ones_random_symm(dim, prob):
     rand = np.random.rand(dim,dim)
-    mat = np.empty(shape=rand.shape, dtype=int)
+    mat = np.empty(shape=rand.shape, dtype=np.int8)
     mat = np.where(rand < prob, 1, 0)
     mat = np.triu(mat) + np.triu(mat).T - np.diag(np.diag(mat))
     return mat
@@ -12,60 +12,49 @@ def ones_random_symm(dim, prob):
 def ones_random(shape, prob):
     rows, cols = shape
     rand = np.random.rand(rows,cols)
-    mat = np.empty(shape=rand.shape, dtype=int)
+    mat = np.empty(shape=rand.shape, dtype=np.int8)
     mat = np.where(rand < prob, 1, 0)
     return mat
 
 class UndirectedNetwork:
 
-    def __init__(self, adjacency, check_adjacency=True):
-        self.A = adjacency
-        if check_adjacency:
-            self._check_adjacency()
-        self.edge_list = self._edge_list()
-        self.edge_dict = self._edge_dict()
-        self.netx = nx.Graph(self.A)
+    def __init__(self, n, m, edge_dict, build_adjacency=False):
+        self.number_of_nodes = n
+        self.number_of_edges = m
+        self.edge_dict = edge_dict
+        if not build_adjacency:
+            self.adjacency = None
 
-    def _check_adjacency(self):
-        if self.A.ndim != 2:
-            raise ValueError("The array is not 2-dimensional")
-        if self.A.shape[0] != self.A.shape[1]:
-            raise ValueError("The matrix is not square")
-        if not np.allclose(self.A, self.A.T, rtol=1e-05, atol=1e-08):
-            raise NotImplementedError("Only undirected networks are supported: the matrix is not symmetric")
-
-    def _edge_list(self):
-        i_list, j_list = np.nonzero(np.triu(self.A))
-        return list(zip(i_list,j_list))
-
-    def _edge_dict(self):
-        node1_list, node2_list = np.nonzero(self.A)
+    @classmethod
+    def fromfile(cls, filename):
         edge_dict = {}
-        for node1,node2 in zip(node1_list,node2_list):
+        file = open(filename, mode="r")
+        all_lines = file.readlines()
+        for i in trange(len(all_lines), desc="Reading file"):
+            line = all_lines[i]
+            if line.startswith("#"):
+                continue
+            if line.startswith("Nodes"):
+                word, n = line.split()
+                continue
+            if line.startswith("Edges"):
+                word, m = line.split()
+                continue
+            node1, node2 = line.split()
             edge_dict.setdefault(node1,[]).append(node2)
-        return edge_dict
+        file.close()
+        return cls(n,m,edge_dict)
 
     def _edges_in(self, comm):
-        return ((u,v) for (u,v) in self.edge_list if u in comm and v in comm)
-
-    def number_of_nodes(self):
-        return self.A.shape[0]
-
-    def number_of_edges(self):
-        return int(np.sum(self.A)*0.5)
+        edges_in_comm = []
+        for u in comm:
+            for v in self.edge_dict[u]:
+                if v in comm:
+                    edges_in_comm.append((u,v))
+        return edges_in_comm
 
     def degrees_of_nodes(self):
-        n = self.number_of_nodes()
-        return {node : np.sum(self.A[node,:]) for node in range(n)}
-
-    def modularity_nx(self, partitions=None):
-        communities = partitions if partitions is not None else self.partitions
-        return nx.algorithms.community.modularity(self.netx, communities)
-
-    def clustering_nx(self):
-        communities = nx.algorithms.community.greedy_modularity_communities(self.netx)
-        self.number_of_partitions = len(communities)
-        self.partitions = communities
+        return {node : len(self.edge_dict[node]) for node in range(self.number_of_nodes)}
 
     def modularity(self, partitions=None):
         communities = partitions if partitions is not None else self.partitions
@@ -74,15 +63,14 @@ class UndirectedNetwork:
         m = deg_sum/2
         norm = 1/(deg_sum**2)
         def community_contribution(community):
-            comm = set(community)
-            L_c = sum(1 for u,v in self._edges_in(comm) if v in comm)
-            degree_sum = sum(degree[u] for u in comm)
+            L_c = sum(0.5 for u,v in self._edges_in(community))
+            degree_sum = sum(degree[u] for u in community)
             return L_c/m - degree_sum*degree_sum*norm
         return sum(map(community_contribution, communities))
 
     def clustering(self):
-        n = self.number_of_nodes()
-        m = self.number_of_edges()
+        n = self.number_of_nodes
+        m = self.number_of_edges
         q0 = 1./(2.*m)
         degrees = self.degrees_of_nodes()
         k = np.array([degrees[i] for i in range(n)])
@@ -129,53 +117,64 @@ class UndirectedNetwork:
         self.partitions = communities
 
     def draw_nx(self, ax, col_communities=False):
+        if self.adjacency is None:
+            raise NotImplementedError("Draw method is not supported for very large networks")
+        netx = nx.Graph(self.adjacency)
         if col_communities and self.number_of_partitions > 1:
             p = self.number_of_partitions
             col = np.linspace(0,1,p)
-            colors = np.empty(self.number_of_nodes())
-            for node in range(self.number_of_nodes()):
+            colors = np.empty(self.number_of_nodes)
+            for node in range(self.number_of_nodes):
                 for i,p in enumerate(self.partitions):
                     if node in p:
                         colors[node] = col[i]
         else:
             colors = "#1f78b4"
-        nx.draw(self.netx, ax=ax, width=0.2, node_size=50, node_color=colors, cmap="viridis")
+        nx.draw(netx, ax=ax, width=0.2, node_size=50, node_color=colors, cmap="viridis")
 
     def show(self, ax, show_communities=False):
+        if self.adjacency is None:
+            raise NotImplementedError("Show method is not supported for very large networks")
         if show_communities and self.number_of_partitions > 1:
-            perms = np.empty(self.number_of_nodes(), dtype=int)
+            perms = np.empty(self.number_of_nodes, dtype=int)
             i = 0
             for comm in self.partitions:
                 for node in comm:
                     perms[i] = node
                     i += 1
-            adj = self.A[perms,:][:,perms]
+            adj = self.adjacency[perms,:][:,perms]
             ax.imshow(adj, cmap="binary")
         else:
-            ax.imshow(self.A, cmap="binary")
+            ax.imshow(self.adjacency, cmap="binary")
 
 
-class Erdos_Renyi(UndirectedNetwork):
+class ErdosRenyi(UndirectedNetwork):
 
-    def __init__(self, n, p, seed=None, check_adjacency=True):
+    def __init__(self, n, p, seed=None):
         if seed is not None:
             np.random.seed(seed)
-        A = ones_random_symm(dim=n, prob=p)
-        UndirectedNetwork.__init__(self, A, check_adjacency)
+        rand = np.random.rand(n,n)
+        A = np.empty(shape=rand.shape, dtype=np.int8)
+        A = np.where(rand < p, 1, 0)
+        self.adjacency = np.triu(A) + np.triu(A).T - np.diag(2*np.diag(A))
+        m = int(np.sum(A)*0.5)
+        node1_list, node2_list = np.nonzero(A)
+        edge_dict = {}
+        for node1,node2 in zip(node1_list,node2_list):
+            edge_dict.setdefault(node1,[]).append(node2)
+        UndirectedNetwork.__init__(self,n,m,edge_dict, build_adjacency=True)
 
 
-class Random_Blocks(UndirectedNetwork):
+class RandomBlocks(UndirectedNetwork):
 
-    def __init__(self, sizes, p_matrix, seed=None, check_parameters=True, check_adjacency=True):
+    def __init__(self, sizes, p_matrix, seed=None):
         self.blocks = sizes.size
         self.block_sizes = sizes
         self.p = prob_matrix
         if seed is not None:
             np.random.seed(seed)
-        if check_parameters:
-            self._check_parameters()
         n = np.sum(sizes)
-        A = np.zeros(shape=(n,n), dtype=int)
+        A = np.zeros(shape=(n,n), dtype=np.int8)
         for i in range(self.blocks):
             row = col = np.sum(sizes[:i])
             for j in range(i, self.blocks):
@@ -186,15 +185,16 @@ class Random_Blocks(UndirectedNetwork):
                 col += c
             row += r
         A = np.triu(A) + np.triu(A).T - np.diag(2*np.diag(A))
-        perms = np.random.permutation(range(n))
-        A = A[perms,:][:,perms]
-        UndirectedNetwork.__init__(self, A, check_adjacency)
+        perms = np.random.permutation(range(n)) 
+        self.adjacency = A[perms,:][:,perms]
         self.number_of_partitions = 1
-        self.partitions = [range(self.number_of_nodes())]
-
-    def _check_parameters(self):
-        if self.blocks != self.p.shape[0]:
-            raise ValueError("The number of blocks and the link probability matrix dimension do not match")
+        self.partitions = [range(n)]
+        m = int(np.sum(self.adjacency)*0.5)
+        node1_list, node2_list = np.nonzero(self.adjacency)
+        edge_dict = {}
+        for node1,node2 in zip(node1_list,node2_list):
+            edge_dict.setdefault(node1,[]).append(node2)
+        UndirectedNetwork.__init__(self,n,m,edge_dict, build_adjacency=True)
 
 
 if __name__ == "__main__":
@@ -215,8 +215,7 @@ if __name__ == "__main__":
         prob_matrix[k][k] = 0.2
 
     ti = time.time()
-    random_blocks = Random_Blocks(blocks_sizes, prob_matrix,
-                                 check_parameters=True, check_adjacency=True)
+    random_blocks = RandomBlocks(blocks_sizes, prob_matrix)
     tf = time.time()
     print(f"\ntime for RBmodel generation = {tf-ti} sec", flush=True)
     fig, ax = plt.subplots(figsize=(8,8))
@@ -224,13 +223,13 @@ if __name__ == "__main__":
     plt.show()
 
     mod1 = random_blocks.modularity()
-    print(f"\nmodularity Q(before clustering) = {mod1}", flush=True)
+    print(f"\nmodularity Q(before clustering) = {mod1}\n", flush=True)
     ti = time.time()
     random_blocks.clustering()
     tf = time.time()
     print(f"\ntime for clustering = {tf-ti}", flush=True)
     mod2 = random_blocks.modularity()
-    print(f"modularity Q(after clustering) = {mod2}", flush=True)
+    print(f"\nmodularity Q(after clustering) = {mod2}", flush=True)
     fig, ax = plt.subplots(figsize=(8,8))
     random_blocks.draw_nx(ax, col_communities=True)
     plt.show()
