@@ -4,7 +4,7 @@ from tqdm import trange
 
 def ones_random_symm(dim, prob):
     rand = np.random.rand(dim,dim)
-    mat = np.empty(shape=rand.shape, dtype=np.int8)
+    mat = np.empty(shape=rand.shape, dtype=int)
     mat = np.where(rand < prob, 1, 0)
     mat = np.triu(mat) + np.triu(mat).T - np.diag(np.diag(mat))
     return mat
@@ -12,7 +12,7 @@ def ones_random_symm(dim, prob):
 def ones_random(shape, prob):
     rows, cols = shape
     rand = np.random.rand(rows,cols)
-    mat = np.empty(shape=rand.shape, dtype=np.int8)
+    mat = np.empty(shape=rand.shape, dtype=int)
     mat = np.where(rand < prob, 1, 0)
     return mat
 
@@ -50,19 +50,17 @@ class UndirectedNetwork:
     def _edges_in(self, comm):
         edges_in_comm = []
         for u in comm:
-            for v in self.edge_dict[u]:
-                if v in comm:
-                    edges_in_comm.append((u,v))
+            if u in self.edge_dict:
+                for v in self.edge_dict[u]:
+                    if v in comm:
+                        edges_in_comm.append((u,v))
         return edges_in_comm
 
     def degrees_of_nodes(self):
-        degree_dict = {}
+        degree_dict = {node : 0 for node in range(self.number_of_nodes)}
         nodes_list = list(self.edge_dict.keys())
-        for node in range(self.number_of_nodes):
-            if node in nodes_list:
-                degree_dict[node] = len(self.edge_dict[node])
-            else:
-                degree_dict[node] = 0
+        for node in nodes_list:
+            degree_dict[node] = len(self.edge_dict[node])
         return degree_dict
 
     def modularity(self, partitions=None):
@@ -81,19 +79,18 @@ class UndirectedNetwork:
         n = self.number_of_nodes
         m = self.number_of_edges
         q0 = 1./(2.*m)
-        degrees = self.degrees_of_nodes()
-        k = np.array([degrees[i] for i in range(n)])
+        k_dict = self.degrees_of_nodes()
         communities = {i : set([i]) for i in range(n)}
-        a = np.array([k[i]*q0 for i in range(n)])
-        dq_matrix = np.zeros(shape=(n,n))
-        for i in range(n):
+        a = np.array([k_dict[i]*q0 for i in range(self.number_of_nodes)])
+        dq_matrix = np.zeros(shape=(n,n), dtype=np.float32)
+        for i in self.edge_dict:
             for j in self.edge_dict[i]:
-                    dq_matrix[i][j] = 2.*q0 - 2.*k[i]*k[j]*q0*q0
+                    dq_matrix[i][j] = 2.*q0 - 2.*k_dict[i]*k_dict[j]*q0*q0
 
         for _ in trange(n-1, desc="Clustering in progress"):
             delta_q = np.max(dq_matrix)
             if delta_q <= 0:
-                continue
+                break
             i, j = np.where(dq_matrix == delta_q)
             if isinstance(i, np.ndarray): i = i[0]
             if isinstance(j, np.ndarray): j = j[0]
@@ -160,7 +157,7 @@ class ErdosRenyi(UndirectedNetwork):
         if seed is not None:
             np.random.seed(seed)
         rand = np.random.rand(n,n)
-        A = np.empty(shape=rand.shape, dtype=np.int8)
+        A = np.empty(shape=rand.shape, dtype=int)
         A = np.where(rand < p, 1, 0)
         self.adjacency = np.triu(A) + np.triu(A).T - np.diag(2*np.diag(A))
         m = int(np.sum(A)*0.5)
@@ -180,7 +177,7 @@ class RandomBlocks(UndirectedNetwork):
         if seed is not None:
             np.random.seed(seed)
         n = np.sum(sizes)
-        A = np.zeros(shape=(n,n), dtype=np.int8)
+        A = np.zeros(shape=(n,n), dtype=int)
         for i in range(self.blocks):
             row = col = np.sum(sizes[:i])
             for j in range(i, self.blocks):
@@ -209,7 +206,7 @@ if __name__ == "__main__":
     import time
 
     blocks = 3
-    n1=200; n2=100; n3=260
+    n1=200; n2=120; n3=280
     n = n1+n2+n3
     blocks_sizes = np.array([n1, n2, n3])
     prob_matrix = np.zeros(shape=(blocks,blocks))
