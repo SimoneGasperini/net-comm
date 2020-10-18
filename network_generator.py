@@ -36,9 +36,11 @@ class UndirectedNetwork:
                 continue
             if line.startswith("Nodes"):
                 word, n = line.split()
+                n = int(n)
                 continue
             if line.startswith("Edges"):
                 word, m = line.split()
+                m = int(m)
                 continue
             node1, node2 = line.split()
             edge_dict.setdefault(node1,[]).append(node2)
@@ -54,7 +56,14 @@ class UndirectedNetwork:
         return edges_in_comm
 
     def degrees_of_nodes(self):
-        return {node : len(self.edge_dict[node]) for node in range(self.number_of_nodes)}
+        degree_dict = {}
+        nodes_list = list(self.edge_dict.keys())
+        for node in range(self.number_of_nodes):
+            if node in nodes_list:
+                degree_dict[node] = len(self.edge_dict[node])
+            else:
+                degree_dict[node] = 0
+        return degree_dict
 
     def modularity(self, partitions=None):
         communities = partitions if partitions is not None else self.partitions
@@ -75,8 +84,6 @@ class UndirectedNetwork:
         degrees = self.degrees_of_nodes()
         k = np.array([degrees[i] for i in range(n)])
         communities = {i : set([i]) for i in range(n)}
-        partitions = [[node for node in comm] for comm in communities.values()]
-        q = self.modularity(partitions)
         a = np.array([k[i]*q0 for i in range(n)])
         dq_matrix = np.zeros(shape=(n,n))
         for i in range(n):
@@ -109,7 +116,6 @@ class UndirectedNetwork:
             dq_matrix[:,i] = 0
             a[j] += a[i]
             a[i] = 0
-            q += delta_q
 
         communities = [set([node for node in comm]) for comm in communities.values()]
         communities = [c for c in communities if len(c) > 0]
