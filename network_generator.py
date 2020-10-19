@@ -43,6 +43,9 @@ class UndirectedNetwork:
                 m = int(m)
                 continue
             node1, node2 = line.split()
+            node1, node2 = int(node1), int(node2)
+            if node1 >= n or node2 >= n:
+                continue
             edge_dict.setdefault(node1,[]).append(node2)
         file.close()
         return cls(n,m,edge_dict)
@@ -51,8 +54,8 @@ class UndirectedNetwork:
         edges_in_comm = []
         for u in comm:
             if u in self.edge_dict:
-                for v in self.edge_dict[u]:
-                    if v in comm:
+                for v in comm:
+                    if v in self.edge_dict[u]:
                         edges_in_comm.append((u,v))
         return edges_in_comm
 
@@ -79,43 +82,50 @@ class UndirectedNetwork:
         n = self.number_of_nodes
         m = self.number_of_edges
         q0 = 1./(2.*m)
-        k_dict = self.degrees_of_nodes()
-        communities = {i : set([i]) for i in range(n)}
-        a = np.array([k_dict[i]*q0 for i in range(self.number_of_nodes)])
-        dq_matrix = np.zeros(shape=(n,n), dtype=np.float32)
-        for i in self.edge_dict:
-            for j in self.edge_dict[i]:
-                    dq_matrix[i][j] = 2.*q0 - 2.*k_dict[i]*k_dict[j]*q0*q0
+        degrees = self.degrees_of_nodes()
+        k = [degrees[i] for i in range(n)]
+        communities = {i : frozenset([i]) for i in range(n)}
+        a = [k[i]*q0 for i in range(n)]
+        dq_matrix = {
+        i : {
+            j : [2.*q0 - 2.*k[i]*k[j]*q0*q0, i, j]
+            for j in self.edge_dict[i]
+            }
+            for i in self.edge_dict
+        }
 
         for _ in trange(n-1, desc="Clustering in progress"):
-            delta_q = np.max(dq_matrix)
+            delta_q = 0.
+            for u in dq_matrix:
+                mass = max(dq_matrix[u].values())
+                if mass[0] > delta_q:
+                    delta_q, i, j = mass
             if delta_q <= 0:
                 break
-            i, j = np.where(dq_matrix == delta_q)
-            if isinstance(i, np.ndarray): i = i[0]
-            if isinstance(j, np.ndarray): j = j[0]
-            communities[j] = set(communities[i] | communities[j])
-            communities[i] = set([])
-            i_set = set(np.nonzero(dq_matrix[i,:])[0])
-            j_set = set(np.nonzero(dq_matrix[j,:])[0])
+            communities[j] = frozenset(communities[i] | communities[j])
+            del communities[i]
+            i_set = set(dq_matrix[i].keys()) if i in dq_matrix else set([])
+            j_set = set(dq_matrix[j].keys()) if j in dq_matrix else set([])
             all_set = (i_set | j_set) - {i,j}
             both_set = i_set & j_set
             for k in all_set:
                 if k in both_set:
-                    dq_jk = dq_matrix[j][k] + dq_matrix[i][k]
+                    dq_jk = dq_matrix[j][k][0] + dq_matrix[i][k][0]
                 elif k in j_set:
-                    dq_jk = dq_matrix[j][k] - 2.*a[i]*a[k]
+                    dq_jk = dq_matrix[j][k][0] - 2.*a[i]*a[k]
                 else:
-                    dq_jk = dq_matrix[i][k] - 2.*a[j]*a[k]
-                dq_matrix[j][k] = dq_jk
-                dq_matrix[k][j] = dq_jk
-            dq_matrix[i,:] = 0
-            dq_matrix[:,i] = 0
+                    dq_jk = dq_matrix[i][k][0] - 2.*a[j]*a[k]
+                if j in dq_matrix: dq_matrix[j][k] = [dq_jk, j, k]
+                if k in dq_matrix: dq_matrix[k][j] = [dq_jk, k, j]
+            for k in dq_matrix[i]:
+                if k in dq_matrix:
+                    if i in dq_matrix[k]:
+                        del dq_matrix[k][i]
+            del dq_matrix[i]
             a[j] += a[i]
             a[i] = 0
 
-        communities = [set([node for node in comm]) for comm in communities.values()]
-        communities = [c for c in communities if len(c) > 0]
+        communities = [frozenset([node for node in comm]) for comm in communities.values()]
         self.number_of_partitions = len(communities)
         self.partitions = communities
 
@@ -206,7 +216,7 @@ if __name__ == "__main__":
     import time
 
     blocks = 3
-    n1=200; n2=120; n3=280
+    n1=1000; n2=800; n3=900
     n = n1+n2+n3
     blocks_sizes = np.array([n1, n2, n3])
     prob_matrix = np.zeros(shape=(blocks,blocks))
@@ -215,7 +225,7 @@ if __name__ == "__main__":
             prob_matrix[i][j] = 0.005
     prob_matrix += prob_matrix.T
     for k in range(blocks):
-        prob_matrix[k][k] = 0.2
+        prob_matrix[k][k] = 0.1
 
     ti = time.time()
     random_blocks = RandomBlocks(blocks_sizes, prob_matrix)
@@ -225,14 +235,9 @@ if __name__ == "__main__":
     random_blocks.show(ax)
     plt.show()
 
-    mod1 = random_blocks.modularity()
-    print(f"\nmodularity Q(before clustering) = {mod1}\n", flush=True)
-    ti = time.time()
     random_blocks.clustering()
     tf = time.time()
     print(f"\ntime for clustering = {tf-ti}", flush=True)
-    mod2 = random_blocks.modularity()
-    print(f"\nmodularity Q(after clustering) = {mod2}", flush=True)
     fig, ax = plt.subplots(figsize=(8,8))
     random_blocks.draw_nx(ax, col_communities=True)
     plt.show()
