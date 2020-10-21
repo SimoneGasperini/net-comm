@@ -51,13 +51,20 @@ class UndirectedNetwork:
         return cls(n,m,edge_dict)
 
     def _edges_in(self, comm):
+        comm = set(comm)
+        u_set = comm & set(self.edge_dict.keys())
         edges_in_comm = []
-        for u in comm:
-            if u in self.edge_dict:
-                for v in comm:
-                    if v in self.edge_dict[u]:
-                        edges_in_comm.append((u,v))
+        for u in u_set:
+            v_set = comm & set(self.edge_dict[u])
+            for v in v_set:
+                edges_in_comm.append((u,v))
         return edges_in_comm
+
+    def _check_clustering(self):
+        if self.number_of_partitions != self.blocks:
+            print("\nThe clustering algorithm failed -->", flush=True)
+            print(f"\t# of original blocks = {self.blocks}", flush=True)
+            print(f"\t# of communities found = {self.number_of_partitions}", flush=True)
 
     def degrees_of_nodes(self):
         degree_dict = {node : 0 for node in range(self.number_of_nodes)}
@@ -78,7 +85,7 @@ class UndirectedNetwork:
             return L_c/m - degree_sum*degree_sum*norm
         return sum(map(community_contribution, communities))
 
-    def clustering(self):
+    def clustering(self, return_modularity=False, check_result=False):
         n = self.number_of_nodes
         m = self.number_of_edges
         q0 = 1./(2.*m)
@@ -93,15 +100,26 @@ class UndirectedNetwork:
             }
             for i in self.edge_dict
         }
-
+        
+        if return_modularity:
+            q = self.modularity()
+            mod_list = [q]
+        end = False
         for _ in trange(n-1, desc="Clustering in progress"):
+            if end: continue
             delta_q = 0.
             for u in dq_matrix:
-                mass = max(dq_matrix[u].values())
+                lst = list(dq_matrix[u].values())
+                if len(lst) == 0: continue
+                mass = max(lst)
                 if mass[0] > delta_q:
                     delta_q, i, j = mass
             if delta_q <= 0:
-                break
+                end = True
+                continue
+            if return_modularity:
+                q += delta_q
+                mod_list.append(q)
             communities[j] = frozenset(communities[i] | communities[j])
             del communities[i]
             i_set = set(dq_matrix[i].keys()) if i in dq_matrix else set([])
@@ -128,6 +146,8 @@ class UndirectedNetwork:
         communities = [frozenset([node for node in comm]) for comm in communities.values()]
         self.number_of_partitions = len(communities)
         self.partitions = communities
+        if check_result: self._check_clustering()
+        return mod_list if return_modularity else None
 
     def draw_nx(self, ax, col_communities=False):
         if self.adjacency is None:
