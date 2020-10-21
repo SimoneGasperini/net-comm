@@ -1,5 +1,4 @@
 import numpy as np
-import networkx as nx
 from tqdm import trange
 
 def ones_random_symm(dim, prob):
@@ -91,7 +90,7 @@ class UndirectedNetwork:
         q0 = 1./(2.*m)
         degrees = self.degrees_of_nodes()
         k = [degrees[i] for i in range(n)]
-        communities = {i : frozenset([i]) for i in range(n)}
+        communities = {i : set([i]) for i in range(n)}
         a = [k[i]*q0 for i in range(n)]
         dq_matrix = {
         i : {
@@ -120,7 +119,7 @@ class UndirectedNetwork:
             if return_modularity:
                 q += delta_q
                 mod_list.append(q)
-            communities[j] = frozenset(communities[i] | communities[j])
+            communities[j] = set(communities[i] | communities[j])
             del communities[i]
             i_set = set(dq_matrix[i].keys()) if i in dq_matrix else set([])
             j_set = set(dq_matrix[j].keys()) if j in dq_matrix else set([])
@@ -135,7 +134,7 @@ class UndirectedNetwork:
                     dq_jk = dq_matrix[i][k][0] - 2.*a[j]*a[k]
                 if j in dq_matrix: dq_matrix[j][k] = [dq_jk, j, k]
                 if k in dq_matrix: dq_matrix[k][j] = [dq_jk, k, j]
-            for k in dq_matrix[i]:
+            for k in list(dq_matrix[i].keys()):
                 if k in dq_matrix:
                     if i in dq_matrix[k]:
                         del dq_matrix[k][i]
@@ -143,27 +142,11 @@ class UndirectedNetwork:
             a[j] += a[i]
             a[i] = 0
 
-        communities = [frozenset([node for node in comm]) for comm in communities.values()]
+        communities = [set([node for node in comm]) for comm in communities.values()]
         self.number_of_partitions = len(communities)
         self.partitions = communities
         if check_result: self._check_clustering()
         return mod_list if return_modularity else None
-
-    def draw_nx(self, ax, col_communities=False):
-        if self.adjacency is None:
-            raise NotImplementedError("Draw method is not supported for very large networks")
-        netx = nx.Graph(self.adjacency)
-        if col_communities and self.number_of_partitions > 1:
-            p = self.number_of_partitions
-            col = np.linspace(0,1,p)
-            colors = np.empty(self.number_of_nodes)
-            for node in range(self.number_of_nodes):
-                for i,p in enumerate(self.partitions):
-                    if node in p:
-                        colors[node] = col[i]
-        else:
-            colors = "#1f78b4"
-        nx.draw(netx, ax=ax, width=0.2, node_size=50, node_color=colors, cmap="viridis")
 
     def show(self, ax, show_communities=False):
         if self.adjacency is None:
