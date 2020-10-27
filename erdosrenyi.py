@@ -20,10 +20,10 @@ class ErdosRenyi(UndirectedNetwork):
         m = int(np.sum(A)*0.5)
 
         # build the edge dictionary from the adjacency matrix
-        node1_list, node2_list = np.nonzero(A)
-        edge_dict = {}
+        node1_list, node2_list = np.nonzero(self.adjacency)
+        edge_dict = {node : [] for node in range(n)}
         for node1,node2 in zip(node1_list,node2_list):
-            edge_dict.setdefault(node1,[]).append(node2)
+            edge_dict[node1].append(node2)
 
         UndirectedNetwork.__init__(self,n,m,edge_dict, build_adjacency=True)
 
