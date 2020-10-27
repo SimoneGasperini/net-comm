@@ -8,12 +8,12 @@ def draw_nx(unet, ax, col_communities=False):
         if unet.adjacency is None:
             raise NotImplementedError("Draw method is not supported for very large networks")
         netx = nx.Graph(unet.adjacency)
-        if col_communities and unet.number_of_partitions > 1:
-            p = unet.number_of_partitions
+        if col_communities and unet.number_of_communities > 1:
+            p = unet.number_of_communities
             col = np.linspace(0,1,p)
             colors = np.empty(unet.number_of_nodes)
             for node in range(unet.number_of_nodes):
-                for i,p in enumerate(unet.partitions):
+                for i,p in enumerate(unet.partition):
                     if node in p:
                         colors[node] = col[i]
         else:
@@ -21,9 +21,9 @@ def draw_nx(unet, ax, col_communities=False):
         nx.draw(netx, ax=ax, width=0.2, node_size=20, node_color=colors, cmap="viridis")
 
 
-blocks = 4
-n1=180; n2=630; n3=390; n4=220
-blocks_sizes = np.array([n1,n2,n3,n4])
+blocks = 3
+n1=280; n2=330; n3=390
+blocks_sizes = np.array([n1,n2,n3])
 prob_matrix = np.zeros(shape=(blocks,blocks))
 for i in range(blocks-1):
     for j in range(i+1, blocks):
