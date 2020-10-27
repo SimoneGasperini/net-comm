@@ -15,37 +15,42 @@ def ones_random(shape, prob):
     mat = np.where(rand < prob, 1, 0)
     return mat
 
+
 class UndirectedNetwork:
 
     def __init__(self, n, m, edge_dict, build_adjacency=False):
         self.number_of_nodes = n
         self.number_of_edges = m
         self.edge_dict = edge_dict
+        '''
+        edge_dict is a dict of int mapped to lists with the following structure:
+            key --> node1
+            value --> list of all nodes2 connected to node1
+        _each node is represented as an integer number(node_id)
+        _each connection is actually counted twice(node1--node2, node2--node1)
+        _if node1 has no connections then its corresponding value is [](empty list)
+        '''
+        self.number_of_communities = 1
+        self.partition = [set(range(n))]
         if not build_adjacency:
             self.adjacency = None
 
     @classmethod
-    def fromfile(cls, filename):
+    def fromfile(cls, filename, comments="#"):
         edge_dict = {}
         file = open(filename, mode="r")
         all_lines = file.readlines()
+        m = 0
         for i in trange(len(all_lines), desc="Reading file"):
             line = all_lines[i]
-            if line.startswith("#"):
+            if line.startswith(comments):
                 continue
-            if line.startswith("Nodes"):
-                word, n = line.split()
-                n = int(n)
-                continue
-            if line.startswith("Edges"):
-                word, m = line.split()
-                m = int(m)
-                continue
+            m += 1
             node1, node2 = line.split()
             node1, node2 = int(node1), int(node2)
-            if node1 >= n or node2 >= n:
-                continue
             edge_dict.setdefault(node1,[]).append(node2)
+            edge_dict.setdefault(node2,[]).append(node1)
+        n = len(edge_dict)
         file.close()
         return cls(n,m,edge_dict)
 
@@ -60,10 +65,10 @@ class UndirectedNetwork:
         return edges_in_comm
 
     def _check_clustering(self):
-        if self.number_of_partitions != self.blocks:
+        if self.number_of_communities != self.blocks:
             print("\nThe clustering algorithm failed -->", flush=True)
             print(f"\t# of original blocks = {self.blocks}", flush=True)
-            print(f"\t# of communities found = {self.number_of_partitions}", flush=True)
+            print(f"\t# of communities found = {self.number_of_communities}", flush=True)
 
     def degrees_of_nodes(self):
         degree_dict = {node : 0 for node in range(self.number_of_nodes)}
@@ -72,8 +77,8 @@ class UndirectedNetwork:
             degree_dict[node] = len(self.edge_dict[node])
         return degree_dict
 
-    def modularity(self, partitions=None):
-        communities = partitions if partitions is not None else self.partitions
+    def modularity(self, partition=None):
+        communities = partition if partition is not None else self.partition
         degree = self.degrees_of_nodes()
         deg_sum = sum(degree.values())
         m = deg_sum/2
@@ -97,9 +102,9 @@ class UndirectedNetwork:
             j : [2.*q0 - 2.*k[i]*k[j]*q0*q0, i, j]
             for j in self.edge_dict[i]
             }
-            for i in self.edge_dict
+            for i in range(n)
         }
-        
+
         if return_modularity:
             q = self.modularity()
             mod_list = [q]
@@ -121,8 +126,8 @@ class UndirectedNetwork:
                 mod_list.append(q)
             communities[j] = set(communities[i] | communities[j])
             del communities[i]
-            i_set = set(dq_matrix[i].keys()) if i in dq_matrix else set([])
-            j_set = set(dq_matrix[j].keys()) if j in dq_matrix else set([])
+            i_set = set(dq_matrix[i].keys())
+            j_set = set(dq_matrix[j].keys())
             all_set = (i_set | j_set) - {i,j}
             both_set = i_set & j_set
             for k in all_set:
@@ -132,29 +137,27 @@ class UndirectedNetwork:
                     dq_jk = dq_matrix[j][k][0] - 2.*a[i]*a[k]
                 else:
                     dq_jk = dq_matrix[i][k][0] - 2.*a[j]*a[k]
-                if j in dq_matrix: dq_matrix[j][k] = [dq_jk, j, k]
-                if k in dq_matrix: dq_matrix[k][j] = [dq_jk, k, j]
-            for k in list(dq_matrix[i].keys()):
-                if k in dq_matrix:
-                    if i in dq_matrix[k]:
-                        del dq_matrix[k][i]
+                dq_matrix[j][k] = [dq_jk, j, k]
+                dq_matrix[k][j] = [dq_jk, k, j]
+            for k in dq_matrix[i].keys():
+                del dq_matrix[k][i]
             del dq_matrix[i]
             a[j] += a[i]
             a[i] = 0
 
         communities = [set([node for node in comm]) for comm in communities.values()]
-        self.number_of_partitions = len(communities)
-        self.partitions = communities
+        self.number_of_communities = len(communities)
+        self.partition = communities
         if check_result: self._check_clustering()
         return mod_list if return_modularity else None
 
     def show(self, ax, show_communities=False):
         if self.adjacency is None:
             raise NotImplementedError("Show method is not supported for very large networks")
-        if show_communities and self.number_of_partitions > 1:
+        if show_communities and self.number_of_communities > 1:
             perms = np.empty(self.number_of_nodes, dtype=int)
             i = 0
-            for comm in self.partitions:
+            for comm in self.partition:
                 for node in comm:
                     perms[i] = node
                     i += 1
