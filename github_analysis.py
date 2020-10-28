@@ -1,3 +1,4 @@
+import pylab as plt
 from unetwork import UndirectedNetwork
 from visualization import draw_communities_graph, draw_communities_barplot
 
@@ -13,6 +14,10 @@ print(f"number of communities after clustering = {github_net.number_of_communiti
 print(f"modularity after clustering = {mod2}")
 
 
-draw_communities_graph(github_net, min_size=10, scale="root")
+fig, ax = plt.subplots(figsize=(8,8))
+draw_communities_graph(github_net, ax, min_size=10, scale="root")
+plt.show()
 
-draw_communities_barplot(github_net, min_size=10, scale="log")
+fig, ax = plt.subplots(figsize=(8,8))
+draw_communities_barplot(github_net, ax, min_size=10, scale="log")
+plt.show()
