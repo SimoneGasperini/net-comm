@@ -1,4 +1,5 @@
 import numpy as np
+import pylab as plt
 from tqdm import trange
 
 def ones_random_symm(dim, prob):
@@ -19,9 +20,6 @@ def ones_random(shape, prob):
 class UndirectedNetwork:
 
     def __init__(self, n, m, edge_dict, build_adjacency=False):
-        self.number_of_nodes = n
-        self.number_of_edges = m
-        self.edge_dict = edge_dict
         '''
         edge_dict is a dict of int mapped to lists with the following structure:
             key --> node1
@@ -30,8 +28,13 @@ class UndirectedNetwork:
         _each connection is actually counted twice(node1--node2, node2--node1)
         _if node1 has no connections then its corresponding value is [](empty list)
         '''
+        self.number_of_nodes = n
+        self.number_of_edges = m
+        self.edge_dict = edge_dict
+
         self.number_of_communities = 1
         self.partition = [set(range(n))]
+
         if not build_adjacency:
             self.adjacency = None
 
@@ -54,15 +57,11 @@ class UndirectedNetwork:
         file.close()
         return cls(n,m,edge_dict)
 
-    def _edges_in(self, comm):
-        comm = set(comm)
-        u_set = comm & set(self.edge_dict.keys())
-        edges_in_comm = []
-        for u in u_set:
-            v_set = comm & set(self.edge_dict[u])
-            for v in v_set:
-                edges_in_comm.append((u,v))
-        return edges_in_comm
+    def _edges_within(self, comm):
+        return [(u,v) for u in comm for v in comm & set(self.edge_dict[u])]
+
+    def _edges_between(self, comm1, comm2):
+        return [(u,v) for u in comm1 for v in comm2 & set(self.edge_dict[u])]
 
     def _check_clustering(self):
         if self.number_of_communities != self.blocks:
@@ -84,7 +83,7 @@ class UndirectedNetwork:
         m = deg_sum/2
         norm = 1/(deg_sum**2)
         def community_contribution(community):
-            L_c = sum(0.5 for u,v in self._edges_in(community))
+            L_c = sum(0.5 for u,v in self._edges_within(community))
             degree_sum = sum(degree[u] for u in community)
             return L_c/m - degree_sum*degree_sum*norm
         return sum(map(community_contribution, communities))
@@ -124,7 +123,7 @@ class UndirectedNetwork:
             if return_modularity:
                 q += delta_q
                 mod_list.append(q)
-            communities[j] = set(communities[i] | communities[j])
+            communities[j] = communities[i] | communities[j]
             del communities[i]
             i_set = set(dq_matrix[i].keys())
             j_set = set(dq_matrix[j].keys())
@@ -145,23 +144,19 @@ class UndirectedNetwork:
             a[j] += a[i]
             a[i] = 0
 
-        communities = [set([node for node in comm]) for comm in communities.values()]
+        communities = [set(comm) for comm in communities.values()]
         self.number_of_communities = len(communities)
         self.partition = communities
         if check_result: self._check_clustering()
         return mod_list if return_modularity else None
 
-    def show(self, ax, show_communities=False):
+    def show(self, ax=None, cmap="Spectral", show_communities=False):
         if self.adjacency is None:
             raise NotImplementedError("Show method is not supported for very large networks")
-        if show_communities and self.number_of_communities > 1:
-            perms = np.empty(self.number_of_nodes, dtype=int)
-            i = 0
-            for comm in self.partition:
-                for node in comm:
-                    perms[i] = node
-                    i += 1
+        if ax is None: ax = plt.gca()
+        if show_communities:
+            perms = np.array([node for comm in self.partition for node in comm])
             adj = self.adjacency[perms,:][:,perms]
-            ax.imshow(adj)
+            ax.imshow(adj, cmap=cmap)
         else:
-            ax.imshow(self.adjacency)
+            ax.imshow(self.adjacency, cmap=cmap)
