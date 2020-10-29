@@ -2,6 +2,8 @@ import numpy as np
 import pylab as plt
 import networkx as nx
 
+plt.style.use('seaborn-paper')
+
 def draw(unet, ax=None, cmap="Spectral", color_communities=False):
     if ax is None: ax = plt.gca()
     node_color = "#1f78b4"
@@ -34,10 +36,16 @@ def draw_communities_graph(unet, ax=None, min_size=1, scale_size=1e6, scale="lin
     nx.draw(netx, ax=ax, width=0.2, node_size=node_size, vmin=0, vmax=1, cmap=cmap)
 
 
+
 def draw_communities_barplot(unet, ax=None, min_size=1, scale="linear"):
     if ax is None: ax = plt.gca()
     sizes = np.array([len(comm) for comm in unet.partition if len(comm) >= min_size])
-    ax.bar(x = range(len(sizes)), height = np.sort(sizes))
+    ax.bar(x = range(len(sizes)), height = np.sort(sizes), color="#1f78b4")
     plt.yscale(scale)
-    ax.set_xlabel("community (size >= min_size)")
-    ax.set_ylabel("size (number of nodes)")
+    ax.set_xlabel(f"community n° \n minimum size = {min_size} nodes")
+    ax.set_ylabel(f"size [# of nodes] \n {scale} scale")
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+    ax.set_title("COMMUNITIES BARPLOT")
