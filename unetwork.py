@@ -138,7 +138,8 @@ class UndirectedNetwork:
                     dq_jk = dq_matrix[i][k][0] - 2.*a[j]*a[k]
                 dq_matrix[j][k] = [dq_jk, j, k]
                 dq_matrix[k][j] = [dq_jk, k, j]
-            for k in dq_matrix[i].keys():
+            i_neighbors = set(dq_matrix[i].keys())
+            for k in i_neighbors:
                 del dq_matrix[k][i]
             del dq_matrix[i]
             a[j] += a[i]
