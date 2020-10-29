@@ -43,18 +43,28 @@ for i in range(iters):
     mod_seq[i] = random_blocks.modularity()
     blocks_seq[i] = k
 
-
+plt.style.use('seaborn-paper')
 fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(12,8))
 
 ax0.set_title("time trend")
 ax0.plot(blocks_seq, time_seq)
 ax0.set_xlabel("number of blocks")
 ax0.set_ylabel("clustering time")
+ax0.spines['right'].set_visible(False)
+ax0.spines['top'].set_visible(False)
+ax0.xaxis.set_ticks_position('bottom')
+ax0.yaxis.set_ticks_position('left')
+
 
 ax1.set_title("modularity trend")
 ax1.plot(blocks_seq, mod_seq, color="orange")
 ax1.set_xlabel("number of blocks")
 ax1.set_ylabel("modularity after clustering")
+ax1.spines['right'].set_visible(False)
+ax1.spines['top'].set_visible(False)
+ax1.xaxis.set_ticks_position('bottom')
+ax1.yaxis.set_ticks_position('left')
+
 
 plt.suptitle(f"Clustering adding each time 1 block of size {n}")
 plt.show()

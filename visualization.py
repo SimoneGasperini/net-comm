@@ -43,7 +43,7 @@ def draw_communities_barplot(unet, ax=None, min_size=1, scale="linear"):
     ax.bar(x = range(len(sizes)), height = np.sort(sizes), color="#1f78b4")
     plt.yscale(scale)
     ax.set_xlabel(f"community n° \n minimum size = {min_size} nodes")
-    ax.set_ylabel(f"size [# of nodes] \n {scale} scale")
+    ax.set_ylabel(f"size [# of nodes]")
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')

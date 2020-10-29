@@ -7,6 +7,7 @@ sys.path.insert(0,"..")
 from randblocks import RandomBlocks
 
 
+
 blocks = 2
 n_i = 200 # initial size of each block
 n_f = 2000 # final size of each block
@@ -44,17 +45,27 @@ for i in range(num_points):
     blocks_sizes += delta_n
 
 
+plt.style.use('seaborn-paper')
 fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(12,8))
 
 ax0.set_title("time trend with nodes")
 ax0.plot(nodes_seq, time_seq)
 ax0.set_xlabel("number of nodes")
 ax0.set_ylabel("clustering time")
+ax0.spines['right'].set_visible(False)
+ax0.spines['top'].set_visible(False)
+ax0.xaxis.set_ticks_position('bottom')
+ax0.yaxis.set_ticks_position('left')
 
 ax1.set_title("time trend with edges")
 ax1.plot(edges_seq, time_seq, color="orange")
 ax1.set_xlabel("number of edges")
 ax1.set_ylabel("clustering time")
+ax1.spines['right'].set_visible(False)
+ax1.spines['top'].set_visible(False)
+ax1.xaxis.set_ticks_position('bottom')
+ax1.yaxis.set_ticks_position('left')
+
 
 plt.suptitle(f"Clustering adding each time {delta_n} nodes for each one of the {blocks} blocks")
 plt.show()

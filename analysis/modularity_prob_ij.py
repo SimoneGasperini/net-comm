@@ -46,18 +46,28 @@ for i in range(num_points):
 
     prob_matrix += update_matrix * delta_p_ij
 
-
+plt.style.use('seaborn-paper')
 fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(12,8))
 
 ax0.set_title("time trend")
 ax0.plot(p_ij_seq, time_seq)
 ax0.set_xlabel("edge probability between blocks")
 ax0.set_ylabel("clustering time")
+ax0.spines['right'].set_visible(False)
+ax0.spines['top'].set_visible(False)
+ax0.xaxis.set_ticks_position('bottom')
+ax0.yaxis.set_ticks_position('left')
+
 
 ax1.set_title("modularity trend")
 ax1.plot(p_ij_seq, mod_seq, color="orange")
 ax1.set_xlabel("edge probability between blocks")
 ax1.set_ylabel("modularity after clustering")
+ax1.spines['right'].set_visible(False)
+ax1.spines['top'].set_visible(False)
+ax1.xaxis.set_ticks_position('bottom')
+ax1.yaxis.set_ticks_position('left')
+
 
 plt.suptitle(f"Clustering increasing each time edge probability between blocks by {delta_p_ij}")
 plt.show()
