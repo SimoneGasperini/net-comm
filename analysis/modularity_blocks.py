@@ -44,17 +44,7 @@ for i in range(iters):
     blocks_seq[i] = k
 
 plt.style.use('seaborn-paper')
-fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(12,8))
-
-ax0.set_title("time trend")
-ax0.plot(blocks_seq, time_seq)
-ax0.set_xlabel("number of blocks")
-ax0.set_ylabel("clustering time")
-ax0.spines['right'].set_visible(False)
-ax0.spines['top'].set_visible(False)
-ax0.xaxis.set_ticks_position('bottom')
-ax0.yaxis.set_ticks_position('left')
-
+fig, ax1 = plt.subplots(figsize=(8,8))
 
 ax1.set_title("modularity trend")
 ax1.plot(blocks_seq, mod_seq, color="orange")
