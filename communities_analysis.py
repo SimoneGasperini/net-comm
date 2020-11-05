@@ -14,12 +14,12 @@ def analyze(filename):
         raise ValueError("Something went wrong in reading the input file!")
 
     mod1 = net.modularity()
-    print(f"\nnumber of communities before clustering = {net.number_of_communities}")
-    print(f"modularity before clustering = {mod1}")
+    print(f"\nnumber of communities before clustering = {net.number_of_communities}", flush=True)
+    print(f"modularity before clustering = {mod1}", flush=True)
     net.clustering()
     mod2 = net.modularity()
-    print(f"number of communities after clustering = {net.number_of_communities}")
-    print(f"modularity after clustering = {mod2}")
+    print(f"number of communities after clustering = {net.number_of_communities}", flush=True)
+    print(f"modularity after clustering = {mod2}", flush=True)
 
     print("\nDRAW COMMUNITIES GRAPH")
     while True:

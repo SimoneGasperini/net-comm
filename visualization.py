@@ -41,11 +41,14 @@ def draw_communities_barplot(unet, ax=None, min_size=1, scale="linear"):
     if ax is None: ax = plt.gca()
     sizes = np.array([len(comm) for comm in unet.partition if len(comm) >= min_size])
     ax.bar(x = range(len(sizes)), height = np.sort(sizes), color="#1f78b4")
-    plt.yscale(scale)
-    ax.set_xlabel(f"community n° \n minimum size = {min_size} nodes")
-    ax.set_ylabel(f"size [# of nodes]")
+    if scale == "root":
+        ax.set_yscale("function", functions=(lambda x : np.sqrt(x),
+                                             lambda x : np.square(x)))
+    else:
+        plt.yscale(scale)
+    ax.set_xlabel("community", fontsize=14)
+    ax.set_ylabel("number of nodes", fontsize=14)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    ax.set_title("COMMUNITIES BARPLOT")
