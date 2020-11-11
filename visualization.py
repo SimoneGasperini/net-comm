@@ -33,7 +33,7 @@ def draw_communities_graph(unet, ax=None, min_size=1, scale_size=1e6, scale="lin
     if scale == "root": node_size = np.sqrt(node_size)
     if scale == "log": node_size = np.log(node_size)
     netx = nx.Graph(matrix)
-    nx.draw(netx, ax=ax, width=0.2, node_size=node_size, vmin=0, vmax=1, cmap=cmap)
+    nx.draw(netx, ax=ax, node_size=node_size, vmin=0, vmax=1, cmap=cmap)
 
 
 
@@ -46,9 +46,13 @@ def draw_communities_barplot(unet, ax=None, min_size=1, scale="linear"):
                                              lambda x : np.square(x)))
     else:
         plt.yscale(scale)
-    ax.set_xlabel("community", fontsize=14)
-    ax.set_ylabel("number of nodes", fontsize=14)
+    ax.set_xlabel("community", fontsize=16)
+    ax.set_ylabel("number of nodes", fontsize=16)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
+    for tx in ax.xaxis.get_major_ticks():
+        tx.label.set_fontsize(12)
+    for ty in ax.yaxis.get_major_ticks():
+        ty.label.set_fontsize(12)

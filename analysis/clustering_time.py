@@ -7,7 +7,6 @@ sys.path.insert(0,"..")
 from randblocks import RandomBlocks
 
 
-
 num_simulations = 10 # number of repetitions of the same clustering
 sigma_conf = 5. # sigma confidence level shown in the plot
 
@@ -57,27 +56,33 @@ mean_time = np.mean(times, axis=0)
 std_time = np.std(times, axis=0)
 
 fig, ax = plt.subplots(figsize=(8,8))
-ax.set_title("time trend with nodes")
 ax.plot(nodes_seq, mean_time)
 ci = sigma_conf * std_time
 ax.fill_between(nodes_seq, (mean_time-ci), (mean_time+ci), alpha=.2)
-ax.set_xlabel("number of nodes")
-ax.set_ylabel("clustering time")
+ax.set_xlabel("number of nodes", fontsize=16)
+ax.set_ylabel("time [s]", fontsize=16)
 ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)
 ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
+for tx in ax.xaxis.get_major_ticks():
+    tx.label.set_fontsize(12)
+for ty in ax.yaxis.get_major_ticks():
+    ty.label.set_fontsize(12)
 plt.show()
 
 fig, ax = plt.subplots(figsize=(8,8))
-ax.set_title("time trend with edges")
 ax.plot(edges_seq, mean_time, color="orange")
 ci = sigma_conf * std_time
 ax.fill_between(edges_seq, (mean_time-ci), (mean_time+ci), color="orange", alpha=.2)
-ax.set_xlabel("number of edges")
-ax.set_ylabel("clustering time")
+ax.set_xlabel("number of edges", fontsize=16)
+ax.set_ylabel("time [s]", fontsize=16)
 ax.spines['right'].set_visible(False)
 ax.spines['top'].set_visible(False)
 ax.xaxis.set_ticks_position('bottom')
 ax.yaxis.set_ticks_position('left')
+for tx in ax.xaxis.get_major_ticks():
+    tx.label.set_fontsize(12)
+for ty in ax.yaxis.get_major_ticks():
+    ty.label.set_fontsize(12)
 plt.show()
