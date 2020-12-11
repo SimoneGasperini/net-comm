@@ -33,7 +33,8 @@ class UndirectedNetwork:
         self.edge_dict = edge_dict
 
         self.number_of_communities = 1
-        self.partition = [set(range(n))]
+        min_id = np.min(list(self.edge_dict.keys()))
+        self.partition = [set(range(min_id, min_id + n))]
 
         if not build_adjacency:
             self.adjacency = None
@@ -56,6 +57,12 @@ class UndirectedNetwork:
         n = len(edge_dict)
         file.close()
         return cls(n,m,edge_dict)
+
+    def _relabeled_dict(self, starting_id):
+        n = starting_id
+        new_dict = { node_i + n : [node_j + n for node_j in self.edge_dict[node_i]]
+                                  for node_i in self.edge_dict }
+        return new_dict
 
     def _edges_within(self, comm):
         return [(u,v) for u in comm for v in comm & set(self.edge_dict[u])]
@@ -96,13 +103,9 @@ class UndirectedNetwork:
         k = [degrees[i] for i in range(n)]
         communities = {i : set([i]) for i in range(n)}
         a = [k[i]*q0 for i in range(n)]
-        dq_matrix = {
-        i : {
-            j : [2.*q0 - 2.*k[i]*k[j]*q0*q0, i, j]
-            for j in self.edge_dict[i]
-            }
-            for i in range(n)
-        }
+        dq_matrix = { i : { j : [2.*q0 - 2.*k[i]*k[j]*q0*q0, i, j]
+                                for j in self.edge_dict[i] }
+                          for i in range(n) }
 
         if return_modularity:
             q = self.modularity()
