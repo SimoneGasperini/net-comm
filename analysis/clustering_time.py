@@ -1,10 +1,9 @@
 import numpy as np
 import pylab as plt
 from time import time
+from model.randblocks import RandomBlocks
 
-import sys
-sys.path.insert(0,"..")
-from randblocks import RandomBlocks
+
 
 num_simulations = 10 # number of repetitions of the same clustering
 sigma_conf = 5. # sigma confidence level shown in the plot
@@ -12,24 +11,29 @@ blocks = 2 # number of blocks
 n_i = 300 # initial size of each block
 n_f = 1000 # final size of each block
 num_points = 10
-delta_n = int((n_f-n_i)/(num_points-1))
+
+delta_n = int((n_f - n_i) / (num_points - 1))
+
 
 prob_matrix = np.zeros(shape=(blocks,blocks))
+
 for i in range(blocks-1):
     for j in range(i+1, blocks):
         prob_matrix[i][j] = 0.005
-prob_matrix += prob_matrix.T
+        
+prob_matrix += prob_matrix.transpose()
+
 for k in range(blocks):
     prob_matrix[k][k] = 0.1
 
 
 times = np.empty(shape=(num_simulations,num_points))
 nodes_seq = np.empty(num_points)
-edges_seq = np.empty(num_points)
 
 for i in range(num_simulations):
 
     print(f"\nSimulation {i+1}/{num_simulations}")
+
     blocks_sizes = np.array([n_i, n_i])
 
     for j in range(num_points):
@@ -39,71 +43,53 @@ for i in range(num_simulations):
         ti = time()
         random_blocks.clustering(check_result=True)
         tf = time()
-        times[i][j] = tf-ti
+        times[i][j] = tf - ti
 
         if i == 0:
             nodes_seq[j] = random_blocks.number_of_nodes
-            edges_seq[j] = random_blocks.number_of_edges
 
         blocks_sizes += delta_n
+
+
+
+#%% plot and fit clustering time, complexity O(n**2)
+
+plt.style.use("seaborn-paper")
 
 mean_time = np.mean(times, axis=0)
 std_time = np.std(times, axis=0)
 
-plt.style.use('seaborn-paper')
-
-
-#%% clustering time is O(n**2)
 pars = np.polyfit(x=nodes_seq, y=mean_time, deg=2)
 
-def parabola(x, pars):
+def parabola (x, pars):
+
     a, b, c = pars
-    return a*x**2 + b*x + c
+    return (a * x**2) + (b * x) + c
 
 fit_function = parabola(x=nodes_seq, pars=pars)
 
 fig, ax = plt.subplots(figsize=(8,8))
 ax.plot(nodes_seq, mean_time)
-ax.plot(nodes_seq, fit_function, color='black', linestyle='--', label='quadratic fit')
+ax.plot(nodes_seq, fit_function, color="black", linestyle="--", label="quadratic fit")
+
 ci = sigma_conf * std_time
-ax.fill_between(nodes_seq, (mean_time-ci), (mean_time+ci), alpha=.2)
+ax.fill_between(nodes_seq, (mean_time - ci), (mean_time + ci), alpha=0.2)
+
 ax.set_xlabel("number of nodes", fontsize=16)
 ax.set_ylabel("time [s]", fontsize=16)
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
-ax.xaxis.set_ticks_position('bottom')
-ax.yaxis.set_ticks_position('left')
+
+ax.spines["right"].set_visible(False)
+ax.spines["top"].set_visible(False)
+
+ax.xaxis.set_ticks_position("bottom")
+ax.yaxis.set_ticks_position("left")
+
 for tx in ax.xaxis.get_major_ticks():
     tx.label.set_fontsize(12)
+    
 for ty in ax.yaxis.get_major_ticks():
     ty.label.set_fontsize(12)
-plt.legend(loc='upper left', fontsize=16)
-plt.show()
 
+plt.legend(loc="upper left", fontsize=16)
 
-#%% clustering time is almost O(m)
-pars = np.polyfit(x=edges_seq, y=mean_time, deg=1)
-
-def line(x, pars):
-    a, b = pars
-    return a*x + b
-
-fit_function = line(x=edges_seq, pars=pars)
-
-fig, ax = plt.subplots(figsize=(8,8))
-ax.plot(edges_seq, mean_time, color="orange")
-ax.plot(edges_seq, fit_function, color='black', linestyle='--', label='linear fit')
-ci = sigma_conf * std_time
-ax.fill_between(edges_seq, (mean_time-ci), (mean_time+ci), color="orange", alpha=.2)
-ax.set_xlabel("number of edges", fontsize=16)
-ax.set_ylabel("time [s]", fontsize=16)
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
-ax.xaxis.set_ticks_position('bottom')
-ax.yaxis.set_ticks_position('left')
-for tx in ax.xaxis.get_major_ticks():
-    tx.label.set_fontsize(12)
-for ty in ax.yaxis.get_major_ticks():
-    ty.label.set_fontsize(12)
-plt.legend(loc='upper left', fontsize=16)
 plt.show()
