@@ -11,7 +11,12 @@ class UndirectedNetwork:
 
         self.number_of_nodes = n
         self.number_of_edges = m
-        self.edge_dict = edge_dict
+        
+        # build edge dictionary if not passed as parameter 
+        if edge_dict is None:
+            self.edge_dict = self._compute_edge_dict(n, adjacency)
+
+        # set adjacency matrix if passed as parameter
         self.adjacency = adjacency
 
         # build one single community containing all the nodes
@@ -48,11 +53,22 @@ class UndirectedNetwork:
         return cls (n=n, m=m, edge_dict=edge_dict)
 
 
+    def _compute_edge_dict (self, n, A):
+
+        edge_dict = {node : [] for node in range(n)}
+
+        for node1, node2 in zip(*np.nonzero(A)):
+            edge_dict[node1].append(node2)
+
+        return edge_dict
+
+
     def _relabeled_dict (self, n):
 
         new_dict = { node_i + n : [node_j + n for node_j in self.edge_dict[node_i]]
                                   for node_i in self.edge_dict }
         return new_dict
+
 
     def _edges_within_comm (self, comm):
 

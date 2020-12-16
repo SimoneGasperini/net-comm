@@ -35,22 +35,19 @@ class RandomBlocks (UndirectedNetwork):
         # compute number of edges
         m = int(np.sum(adjacency) * 0.5)
 
-        # build edges dictionary
-        edge_dict = self._compute_edge_dict(n, adjacency)
-
-        UndirectedNetwork.__init__(self, n=n, m=m, edge_dict=edge_dict, adjacency=adjacency)
+        UndirectedNetwork.__init__(self, n=n, m=m, edge_dict=None, adjacency=adjacency)
 
 
     def _check_parameters (self, block_sizes, prob_matrix):
 
         if not np.all((block_sizes % 1) == 0):
-            raise TypeError("All the elements in 'block_sizes' must be int")
+            raise TypeError("All the elements in 'block_sizes' must be ints")
 
-        if not np.all(prob_matrix >= 0):
-            raise ValueError("All the elements in 'prob_matrix' must be float >= 0")
+        if not np.all(block_sizes > 0):
+            raise TypeError("All the elements in 'block_sizes' must be > 0")
 
-        if not np.all(prob_matrix <= 1):
-            raise ValueError("All the elements in 'prob_matrix' must be float <= 1")
+        if not (np.all(prob_matrix >= 0) and np.all(prob_matrix <= 1)):
+            raise ValueError("All the elements in 'prob_matrix' must be floats in [0,1]")
 
         if not np.all(prob_matrix == prob_matrix.transpose()):
             raise ValueError("'prob_matrix' must be symmetric (undirected)")
@@ -80,15 +77,3 @@ class RandomBlocks (UndirectedNetwork):
         perms = np.random.permutation(range(n))
 
         return A[perms,:][:,perms]
-
-
-    def _compute_edge_dict (self, n, A):
-
-        node1_list, node2_list = np.nonzero(A)
-
-        edge_dict = {node : [] for node in range(n)}
-
-        for node1, node2 in zip(node1_list, node2_list):
-            edge_dict[node1].append(node2)
-
-        return edge_dict

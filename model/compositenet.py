@@ -39,7 +39,7 @@ class CompositeNetwork (UndirectedNetwork):
             raise TypeError("All the elements in 'unetworks' must be UndirectedNetwork")
 
         if not np.all((edge_matrix % 1) == 0):
-            raise TypeError("All the elements in 'edge_matrix' must be int")
+            raise TypeError("All the elements in 'edge_matrix' must be ints")
 
         if not np.all(edge_matrix >= 0):
             raise ValueError("All the elements in 'edge_matrix' must be >= 0")

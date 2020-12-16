@@ -1,8 +1,7 @@
 import numpy as np
 import pylab as plt
-from time import time
 
-from model.randblocks import RandomBlocks
+from model.randomblocks import RandomBlocks
 from model.visualization import draw
 
 
@@ -22,10 +21,7 @@ prob_matrix[0,0] = 0.18
 prob_matrix[2,2] = 0.25
 
 
-ti = time()
 random_blocks = RandomBlocks(blocks_sizes, prob_matrix)
-tf = time()
-print(f"\nGeneration time = {tf-ti} s", flush=True)
 
 mod = random_blocks.clustering(check_result=True)
 

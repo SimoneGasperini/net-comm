@@ -1,7 +1,7 @@
 import numpy as np
 import pylab as plt
 from time import time
-from model.randblocks import RandomBlocks
+from model.randomblocks import RandomBlocks
 
 
 
