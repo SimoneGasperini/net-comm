@@ -54,15 +54,19 @@ class UndirectedNetwork:
                                   for node_i in self.edge_dict }
         return new_dict
 
-
-    def _edges_within (self, comm):
+    def _edges_within_comm (self, comm):
 
         return [(u, v) for u in comm for v in comm & set(self.edge_dict[u])]
 
 
-    def _edges_between (self, comm1, comm2):
+    def _edges_between_comm (self, comm1, comm2):
 
         return [(u, v) for u in comm1 for v in comm2 & set(self.edge_dict[u])]
+
+
+    def _totdegree_of_comm (self, comm):
+
+        return np.sum([len(self.edge_dict[u]) for u in comm])
 
 
     def _check_clustering (self):
@@ -76,31 +80,23 @@ class UndirectedNetwork:
 
     def degrees_of_nodes (self):
 
-        degree_dict = {node : 0 for node in range(self.number_of_nodes)}
+        return { u : len(self.edge_dict[u]) for u in range(self.number_of_nodes) }
 
-        for node in self.edge_dict.keys():
-            degree_dict[node] = len(self.edge_dict[node])
 
-        return degree_dict
+    def modularity_of_comm (self, comm):
+
+        m = self.number_of_edges
+        m_c = len(self._edges_within_comm(comm)) * 0.5
+        d_c = self._totdegree_of_comm(comm)
+
+        return (m_c / m) - (d_c / (2. * m))**2
 
 
     def modularity (self, partition=None):
 
         communities = partition if partition is not None else self.partition
 
-        degree = self.degrees_of_nodes()
-        deg_sum = sum(degree.values())
-        m = deg_sum / 2
-        norm = 1. / (deg_sum**2)
-
-        def community_contribution (comm):
-
-            L_c = sum(0.5 for u, v in self._edges_within(comm))
-            degree_sum = sum(degree[u] for u in comm)
-
-            return (L_c / m) - (degree_sum * degree_sum * norm)
-
-        return sum(map(community_contribution, communities))
+        return np.sum([self.modularity_of_comm(comm) for comm in communities])
 
 
     def clustering (self, check_result=False):
