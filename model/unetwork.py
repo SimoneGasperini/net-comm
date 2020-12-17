@@ -11,13 +11,12 @@ class UndirectedNetwork:
 
         self.number_of_nodes = n
         self.number_of_edges = m
-        
-        # build edge dictionary if not passed as parameter 
-        if edge_dict is None:
-            self.edge_dict = self._compute_edge_dict(n, adjacency)
 
-        # set adjacency matrix if passed as parameter
-        self.adjacency = adjacency
+        self.edge_dict = edge_dict
+
+        if adjacency is not None:
+            self.adjacency = adjacency
+            self.edge_dict = self._compute_edge_dict(n, adjacency)
 
         # build one single community containing all the nodes
         self.number_of_communities = 1
@@ -75,14 +74,16 @@ class UndirectedNetwork:
         return [(u, v) for u in comm for v in comm & set(self.edge_dict[u])]
 
 
-    def _edges_between_comm (self, comm1, comm2):
-
-        return [(u, v) for u in comm1 for v in comm2 & set(self.edge_dict[u])]
-
-
     def _totdegree_of_comm (self, comm):
 
         return np.sum([len(self.edge_dict[u]) for u in comm])
+
+
+    def _outFactor_of_comm (self, comm):
+
+        edges_within = len(self._edges_within_comm(comm)) * 0.5
+
+        return (self._totdegree_of_comm(comm) / edges_within) - 2.
 
 
     def _check_clustering (self):

@@ -30,8 +30,8 @@ class ErdosRenyi (UndirectedNetwork):
         if not n % 1 == 0:
             raise TypeError("The number of nodes 'n' must be an int")
 
-        if not n > 0:
-            raise ValueError("The number of nodes 'n' must be > 0")
+        if not n > 1:
+            raise ValueError("The number of nodes 'n' must be > 1")
 
         if not 0 <= p <= 1:
             raise ValueError("The edge probability 'p' must be a float in [0,1]")

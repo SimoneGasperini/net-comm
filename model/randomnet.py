@@ -4,7 +4,7 @@ from model.unetwork import UndirectedNetwork
 
 
 
-class RandomNet (UndirectedNetwork):
+class RandomNetwork (UndirectedNetwork):
 
 
     def __init__ (self, n, m, seed=None):
@@ -27,14 +27,14 @@ class RandomNet (UndirectedNetwork):
         if not n % 1 == 0:
             raise TypeError("The number of nodes 'n' must be an int")
 
-        if not n > 0:
-            raise ValueError("The number of nodes 'n' must be > 0")
+        if not n > 1:
+            raise ValueError("The number of nodes 'n' must be > 1")
 
         if not m % 1 == 0:
             raise TypeError("The number of edges 'm' must be an int")
 
-        if not m >= 0:
-            raise ValueError("The number of edges 'm' must be >= 0")
+        if not 0 <= m <= (n * (n - 1)) * 0.5:
+            raise ValueError("The number of edges 'm' must be in [0, n*(n-1)/2]")
 
 
     def _compute_adjacency (self, n, m):

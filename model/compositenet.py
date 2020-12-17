@@ -3,6 +3,19 @@ import numpy as np
 from model.unetwork import UndirectedNetwork
 
 
+def mergeDict (dict1, dict2):
+    # merge dictionaries and keep values of common keys in list
+
+    dict3 = {**dict1, **dict2}
+
+    for key in dict1:
+
+        if key in dict2:
+            dict3[key] += dict1[key]
+
+    return dict3
+
+
 
 class CompositeNetwork (UndirectedNetwork):
 
@@ -19,13 +32,16 @@ class CompositeNetwork (UndirectedNetwork):
         # check type and value of parameters
         self._check_parameters(unetworks, edge_matrix)
 
+        # set number of blocks
+        self.blocks = unetworks.size
+
         # set random seed if provided
         if seed is not None:
             np.random.seed(seed)
 
         # compute number of nodes and edges
         n = np.sum([unet.number_of_nodes for unet in unetworks])
-        m = np.sum([unet.number_of_edges for unet in unetworks]) + np.sum(edge_matrix)
+        m = np.sum([unet.number_of_edges for unet in unetworks]) + np.sum(np.triu(edge_matrix))
 
         # build edges dictionary
         edge_dict = self._compute_edge_dict(unetworks, edge_matrix)
@@ -58,7 +74,7 @@ class CompositeNetwork (UndirectedNetwork):
 
             n = 0 if i == 0 else nodes_cumsum[i-1]
             current = unet._relabeled_dict(n)
-            edge_dict = {**edge_dict, **current}
+            edge_dict = mergeDict(edge_dict, current)
 
         edges_new = {}
 
@@ -76,5 +92,6 @@ class CompositeNetwork (UndirectedNetwork):
                     node_i = np.random.randint(low_i, high_i)
                     node_j = np.random.randint(low_j, high_j)
                     edges_new.setdefault(node_i, []).append(node_j)
+                    edges_new.setdefault(node_j, []).append(node_i)
 
-        return {**edge_dict, **edges_new}
+        return mergeDict(edge_dict, edges_new)

@@ -43,8 +43,8 @@ class RandomBlocks (UndirectedNetwork):
         if not np.all((block_sizes % 1) == 0):
             raise TypeError("All the elements in 'block_sizes' must be ints")
 
-        if not np.all(block_sizes > 0):
-            raise TypeError("All the elements in 'block_sizes' must be > 0")
+        if not np.all(block_sizes > 1):
+            raise TypeError("All the elements in 'block_sizes' must be > 1")
 
         if not (np.all(prob_matrix >= 0) and np.all(prob_matrix <= 1)):
             raise ValueError("All the elements in 'prob_matrix' must be floats in [0,1]")
