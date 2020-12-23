@@ -23,16 +23,15 @@ prob_matrix[2,2] = 0.25
 
 random_blocks = RandomBlocks(blocks_sizes, prob_matrix)
 
-mod = random_blocks.clustering(check_result=True)
-
-mod = random_blocks.modularity()
-print(f"\nModularity = {mod}")
+partition = random_blocks.clustering(check_result=True)
+modularity = random_blocks.modularity(partition)
+print(f"\nModularity = {modularity}")
 
 
 fig, ax = plt.subplots(figsize=(8,8))
-draw(random_blocks, ax, color_communities=True)
+draw(random_blocks, partition, ax=ax)
 plt.show()
 
 fig, ax = plt.subplots(figsize=(8,8))
-random_blocks.show(ax, show_communities=True)
+random_blocks.show(partition, ax=ax)
 plt.show()

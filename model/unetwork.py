@@ -18,9 +18,7 @@ class UndirectedNetwork:
             self.adjacency = adjacency
             self.edge_dict = self._compute_edge_dict(n, adjacency)
 
-        # build one single community containing all the nodes
         self.number_of_communities = 1
-        self.partition = [set(range(n))]
 
 
     @classmethod
@@ -109,11 +107,9 @@ class UndirectedNetwork:
         return (m_c / m) - (d_c / (2. * m))**2
 
 
-    def modularity (self, partition=None):
+    def modularity (self, partition):
 
-        communities = partition if partition is not None else self.partition
-
-        return np.sum([self.modularity_of_comm(comm) for comm in communities])
+        return np.sum([self.modularity_of_comm(comm) for comm in partition])
 
 
     def clustering (self, check_result=False):
@@ -177,15 +173,16 @@ class UndirectedNetwork:
             a[j] += a[i]
             a[i] = 0
 
-        communities = [set(comm) for comm in communities.values()]
-        self.number_of_communities = len(communities)
-        self.partition = communities
+        partition = [set(comm) for comm in communities.values()]
+        self.number_of_communities = len(partition)
 
         if check_result:
             self._check_clustering()
 
+        return partition
 
-    def show (self, ax=None, cmap="Spectral", show_communities=False):
+
+    def show (self, partition=None, ax=None, cmap="Spectral"):
 
         if self.adjacency is None:
             raise NotImplementedError("Show method is not supported")
@@ -193,8 +190,8 @@ class UndirectedNetwork:
         if ax is None:
             ax = plt.gca()
 
-        if show_communities:
-            perms = np.array([node for comm in self.partition for node in comm])
+        if partition:
+            perms = np.array([node for comm in partition for node in comm])
             adjacency = self.adjacency[perms,:][:,perms]
 
             ax.imshow(adjacency, cmap=cmap)

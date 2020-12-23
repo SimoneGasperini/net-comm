@@ -60,8 +60,8 @@ print(f"\nl = {l}")
 print(f"l_max = L/4 = {l_max}")
 print(f"a = {a}\n", flush=True)
 
-composite.clustering(check_result=True)
+partition = composite.clustering(check_result=True)
 
 fig, ax = plt.subplots(figsize=(8,8))
-draw(composite, ax, color_communities=True)
+draw(composite, partition, ax=ax)
 plt.show()

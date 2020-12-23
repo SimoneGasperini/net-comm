@@ -6,19 +6,19 @@ plt.style.use("seaborn-paper")
 
 
 
-def draw (unet, ax=None, cmap="Spectral", color_communities=False):
+def draw (unet, partition=None, ax=None, cmap="Spectral"):
 
     if ax is None:
         ax = plt.gca()
 
     netx = nx.to_networkx_graph(unet.edge_dict)
 
-    if color_communities:
+    if partition is not None:
 
         col = np.linspace(0, 1, num=unet.number_of_communities)
 
         node_color = np.array([col[i] for node in range(unet.number_of_nodes)
-                               for i, comm in enumerate(unet.partition)
+                               for i, comm in enumerate(partition)
                                if node in comm])
     else:
 
@@ -28,12 +28,13 @@ def draw (unet, ax=None, cmap="Spectral", color_communities=False):
 
 
 
-def draw_communities_graph (unet, ax=None, min_size=1, scale_size=1e6, scale="linear", cmap="plasma"):
+def draw_communities_graph (unet, partition, ax=None,
+                            min_size=1, scale_size=1e6, scale="linear", cmap="plasma"):
 
     if ax is None:
         ax = plt.gca()
     
-    communities = [comm for comm in unet.partition if len(comm) >= min_size]
+    communities = [comm for comm in partition if len(comm) >= min_size]
     n = len(communities)
 
     matrix = np.eye(n, dtype=int)
@@ -60,12 +61,13 @@ def draw_communities_graph (unet, ax=None, min_size=1, scale_size=1e6, scale="li
 
 
 
-def draw_communities_barplot (unet, ax=None, min_size=1, scale="linear"):
+def draw_communities_barplot (unet, partition, ax=None,
+                              min_size=1, scale="linear"):
 
     if ax is None:
         ax = plt.gca()
 
-    sizes = np.array([len(comm) for comm in unet.partition if len(comm) >= min_size])
+    sizes = np.array([len(comm) for comm in partition if len(comm) >= min_size])
 
     ax.bar(x = range(len(sizes)), height = np.sort(sizes))
 
