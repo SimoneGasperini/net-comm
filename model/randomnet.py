@@ -7,22 +7,26 @@ from model.unetwork import UndirectedNetwork
 class RandomNetwork (UndirectedNetwork):
 
 
-    def __init__ (self, n, m, seed=None):
+    def __init__ (self, n, m, force_connected=False, seed=None):
 
         # check type and value of parameters
-        self._check_parameters(n, m)
+        self._check_parameters(n, m, force_connected)
 
         # set random seed if provided
         if seed is not None:
             np.random.seed(seed)
 
         # build adjacency matrix
-        adjacency = self._compute_adjacency(n, m)
+        if force_connected:
+            adjacency = self._compute_connected_adjacency(n, m)
+
+        else:
+            adjacency = self._compute_adjacency(n, m)
 
         UndirectedNetwork.__init__(self, n=n, m=m, edge_dict=None, adjacency=adjacency)
 
 
-    def _check_parameters (self, n, m):
+    def _check_parameters (self, n, m, force_connected):
 
         if not n % 1 == 0:
             raise TypeError("The number of nodes 'n' must be an int")
@@ -34,7 +38,31 @@ class RandomNetwork (UndirectedNetwork):
             raise TypeError("The number of edges 'm' must be an int")
 
         if not 0 <= m <= (n * (n - 1)) * 0.5:
-            raise ValueError("The number of edges 'm' must be in [0, n*(n-1)/2]")
+
+            if force_connected and not m >= n - 1:
+                raise ValueError("The number of edges 'm' must be in [n-1, n*(n-1)/2]")
+
+            else:
+                raise ValueError("The number of edges 'm' must be in [0, n*(n-1)/2]")
+
+
+    def _compute_connected_adjacency (self, n, m):
+
+        A = np.zeros(shape=(n, n), dtype=int)
+
+        # create minimial connected component
+        up_diag = np.array([(i, i+1) for i in range(n-1)])
+        A[up_diag[:,0], up_diag[:,1]] = 1
+
+        # add random edges in the remaining upper part
+        upper = [(i, j) for i, j in zip(*np.triu_indices(n)) if j > i+1]
+        indices = np.random.permutation(upper)[:m-(n-1)]
+        A[indices[:,0], indices[:,1]] = 1
+
+        A += A.transpose()
+        perms = np.random.permutation(range(n))
+
+        return A[perms,:][:,perms]
 
 
     def _compute_adjacency (self, n, m):
