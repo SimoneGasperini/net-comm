@@ -37,12 +37,12 @@ class RandomNetwork (UndirectedNetwork):
         if not m % 1 == 0:
             raise TypeError("The number of edges 'm' must be an int")
 
-        if not 0 <= m <= (n * (n - 1)) * 0.5:
-
-            if force_connected and not m >= n - 1:
+        if force_connected:
+            if not n - 1 <= m <= (n * (n - 1)) * 0.5:
                 raise ValueError("The number of edges 'm' must be in [n-1, n*(n-1)/2]")
 
-            else:
+        else:
+            if not 0 <= m <= (n * (n - 1)) * 0.5:
                 raise ValueError("The number of edges 'm' must be in [0, n*(n-1)/2]")
 
 
