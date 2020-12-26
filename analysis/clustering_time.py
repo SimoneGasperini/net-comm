@@ -1,5 +1,9 @@
 import numpy as np
 import pylab as plt
+
+import sys
+sys.path.append("..")
+
 from time import time
 from model.randomblocks import RandomBlocks
 
@@ -30,9 +34,8 @@ for k in range(blocks):
 times = np.empty(shape=(num_simulations,num_points))
 nodes_seq = np.empty(num_points)
 
-for i in range(num_simulations):
 
-    print(f"\nSimulation {i+1}/{num_simulations}")
+for i in range(num_simulations):
 
     blocks_sizes = np.array([n_i, n_i])
 
@@ -41,7 +44,7 @@ for i in range(num_simulations):
         random_blocks = RandomBlocks(blocks_sizes, prob_matrix)
 
         ti = time()
-        random_blocks.clustering(check_result=True)
+        part = random_blocks.clustering(check_result=True)
         tf = time()
         times[i][j] = tf - ti
 
@@ -49,7 +52,6 @@ for i in range(num_simulations):
             nodes_seq[j] = random_blocks.number_of_nodes
 
         blocks_sizes += delta_n
-
 
 
 #%% plot and fit clustering time, complexity O(n**2)
@@ -75,14 +77,8 @@ ax.plot(nodes_seq, fit_function, color="black", linestyle="--", label="quadratic
 ci = sigma_conf * std_time
 ax.fill_between(nodes_seq, (mean_time - ci), (mean_time + ci), alpha=0.2)
 
-ax.set_xlabel("number of nodes", fontsize=16)
+ax.set_xlabel("nodes", fontsize=16)
 ax.set_ylabel("time [s]", fontsize=16)
-
-ax.spines["right"].set_visible(False)
-ax.spines["top"].set_visible(False)
-
-ax.xaxis.set_ticks_position("bottom")
-ax.yaxis.set_ticks_position("left")
 
 for tx in ax.xaxis.get_major_ticks():
     tx.label.set_fontsize(12)
@@ -92,4 +88,5 @@ for ty in ax.yaxis.get_major_ticks():
 
 plt.legend(loc="upper left", fontsize=16)
 
+plt.grid()
 plt.show()

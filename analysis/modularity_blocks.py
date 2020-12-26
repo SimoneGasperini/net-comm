@@ -1,5 +1,9 @@
 import numpy as np
 import pylab as plt
+
+import sys
+sys.path.append("..")
+
 from time import time
 from model.randomblocks import RandomBlocks
 
@@ -29,7 +33,6 @@ time_seq = np.empty(iters)
 mod_seq = np.empty(iters)
 blocks_seq = np.empty(iters)
 
-print(f"Clustering adding each time 1 block of size {n} -->", flush=True)
 
 for i in range(iters):
 
@@ -40,14 +43,13 @@ for i in range(iters):
     random_blocks = RandomBlocks(blocks_sizes_k, prob_matrix_k)
 
     ti = time()
-    random_blocks.clustering(check_result=True)
+    part = random_blocks.clustering(check_result=True)
     tf = time()
     time_seq[i] = tf - ti
 
-    mod_seq[i] = random_blocks.modularity()
+    mod_seq[i] = random_blocks.modularity(part)
 
     blocks_seq[i] = k
-
 
 
 #%% plot modularity varying the number of blocks
@@ -57,14 +59,8 @@ plt.style.use("seaborn-paper")
 fig, ax = plt.subplots(figsize=(8,8))
 ax.plot(blocks_seq, mod_seq, color="orange")
 
-ax.set_xlabel("number of blocks", fontsize=16)
+ax.set_xlabel("blocks", fontsize=16)
 ax.set_ylabel("modularity", fontsize=16)
-
-ax.spines["right"].set_visible(False)
-ax.spines["top"].set_visible(False)
-
-ax.xaxis.set_ticks_position("bottom")
-ax.yaxis.set_ticks_position("left")
 
 for tx in ax.xaxis.get_major_ticks():
     tx.label.set_fontsize(12)
@@ -72,4 +68,5 @@ for tx in ax.xaxis.get_major_ticks():
 for ty in ax.yaxis.get_major_ticks():
     ty.label.set_fontsize(12)
 
+plt.grid()
 plt.show()
