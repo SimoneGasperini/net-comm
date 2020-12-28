@@ -5,8 +5,7 @@ import sys
 sys.path.append("..")
 
 from time import time
-from model.randomblocks import RandomBlocks
-
+from model.erdosrenyi_blocks import ErdosRenyiBlocks
 
 
 num_simulations = 10 # number of repetitions of the same clustering
@@ -41,7 +40,7 @@ for i in range(num_simulations):
 
     for j in range(num_points):
 
-        random_blocks = RandomBlocks(blocks_sizes, prob_matrix)
+        random_blocks = ErdosRenyiBlocks(blocks_sizes, prob_matrix)
 
         ti = time()
         part = random_blocks.clustering(check_result=True)
