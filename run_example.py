@@ -1,7 +1,7 @@
 import numpy as np
 import pylab as plt
 
-from model.randomblocks import RandomBlocks
+from model.erdosrenyi_blocks import ErdosRenyiBlocks
 from model.visualization import draw
 
 
@@ -21,17 +21,17 @@ prob_matrix[0,0] = 0.18
 prob_matrix[2,2] = 0.25
 
 
-random_blocks = RandomBlocks(blocks_sizes, prob_matrix)
+er_blocks = ErdosRenyiBlocks(blocks_sizes, prob_matrix)
 
-partition = random_blocks.clustering(check_result=True)
-modularity = random_blocks.modularity(partition)
+partition = er_blocks.clustering(check_result=True)
+modularity = er_blocks.modularity(partition)
 print(f"\nModularity = {modularity}")
 
 
 fig, ax = plt.subplots(figsize=(8,8))
-draw(random_blocks, partition, ax=ax)
+draw(er_blocks, partition, ax=ax)
 plt.show()
 
 fig, ax = plt.subplots(figsize=(8,8))
-random_blocks.show(partition, ax=ax)
+er_blocks.show(partition, ax=ax)
 plt.show()

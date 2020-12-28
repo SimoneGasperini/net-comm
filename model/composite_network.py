@@ -1,19 +1,6 @@
 import numpy as np
 
-from model.unetwork import UndirectedNetwork
-
-
-def mergeDict (dict1, dict2):
-    # merge dictionaries and keep values of common keys in list
-
-    dict3 = {**dict1, **dict2}
-
-    for key in dict1:
-
-        if key in dict2:
-            dict3[key] += dict1[key]
-
-    return dict3
+from model.unet import UndirectedNetwork
 
 
 
@@ -74,7 +61,7 @@ class CompositeNetwork (UndirectedNetwork):
 
             n = 0 if i == 0 else nodes_cumsum[i-1]
             current = unet._relabeled_dict(n)
-            edge_dict = mergeDict(edge_dict, current)
+            edge_dict = _mergeDict(edge_dict, current)
 
         edges_new = {}
 
@@ -94,4 +81,17 @@ class CompositeNetwork (UndirectedNetwork):
                     edges_new.setdefault(node_i, []).append(node_j)
                     edges_new.setdefault(node_j, []).append(node_i)
 
-        return mergeDict(edge_dict, edges_new)
+        return _mergeDict(edge_dict, edges_new)
+
+
+def _mergeDict (dict1, dict2):
+    # merge dictionaries and keep values of common keys in list
+
+    dict3 = {**dict1, **dict2}
+
+    for key in dict1:
+
+        if key in dict2:
+            dict3[key] += dict1[key]
+
+    return dict3

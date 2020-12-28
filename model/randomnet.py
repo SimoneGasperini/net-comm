@@ -1,6 +1,6 @@
 import numpy as np
 
-from model.unetwork import UndirectedNetwork
+from model.unet import UndirectedNetwork
 
 
 

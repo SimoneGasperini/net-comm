@@ -1,10 +1,10 @@
 import numpy as np
 
-from model.unetwork import UndirectedNetwork
+from model.unet import UndirectedNetwork
 
 
 
-class RandomBlocks (UndirectedNetwork):
+class ErdosRenyiBlocks (UndirectedNetwork):
 
 
     def __init__ (self, block_sizes, prob_matrix, seed=None):
