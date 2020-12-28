@@ -19,10 +19,6 @@ def natural_partition(comms, nodes):
     n = np.cumsum([nodes for _ in range(comms)])
     return [set(range(n1, n2)) for n1, n2 in zip(n-nodes, n)]
 
-def resolution_limit(m, L):
-    condition = m < np.sqrt(2 * L)
-    return m[condition][-1]
-
 
 '''
 ##############################################################################
@@ -62,7 +58,7 @@ for c in comms:
 
     edges = integer_approximation(M, c)
     unetworks = [RandomNetwork(n=n, m=m, force_connected=True) for m in edges]
-    
+
     edge_matrix = np.zeros(shape=(c, c), dtype=int)
     up_diag = np.array([(i, i+1) for i in range(c-1)])
     edge_matrix[up_diag[:,0], up_diag[:,1]] = 1
@@ -84,25 +80,25 @@ plt.style.use('seaborn-paper')
 
 fig, ax = plt.subplots(figsize=(8,8))
 
-maxq = np.sqrt(M)
-ax.axvline(x=maxq, color='black', linestyle='--')
-plt.text(maxq+1, 0.951, '$c_{MAX}=\sqrt{M}$', fontsize=12)
+c_max = np.sqrt(M)
+ax.axvline(x=c_max, color='black', linestyle='--')
+plt.text(c_max+1, 0.951, '$c_{MAX}=\sqrt{M}$', fontsize=12)
 
-rl  = resolution_limit(comms, M)
-ax.axvline(x=rl, color='black', linestyle='--')
-plt.text(rl+1, 0.951, '$c_{RL}=\sqrt{2M}$', fontsize=12)
+c_rl = np.sqrt(2*M)
+ax.axvline(x=c_rl, color='black', linestyle='--')
+plt.text(c_rl+1, 0.951, '$c_{RL}=\sqrt{2M}$', fontsize=12)
 
 f = lambda x, y : 1 - x / y - 1 / x
 x = np.linspace(comms[0], comms[-1], num=1000)
 ax.plot(x, f(x, M), label='theory')
 
-ax.scatter(comms, mod1, s=20, marker='^', color='green', label='natural partition')
+ax.scatter(comms, mod1, s=30, marker='+', color='green', label='natural partition')
 
 ax.scatter(comms, mod2, s=20, marker='o', color='red', label='detected partition')
 
 ax.set_xlabel('number of blocks', fontsize=16)
 ax.set_ylabel('modularity', fontsize=16)
-plt.legend(fontsize=12, loc='lower right')
+ax.legend(fontsize=12, loc='lower right')
 
 for tx in ax.xaxis.get_major_ticks():
     tx.label.set_fontsize(12)
