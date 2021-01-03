@@ -4,8 +4,9 @@ sys.path.append("..")
 from model.unet import UndirectedNetwork
 from model.randomnet import RandomNetwork
 
-
-file = '../data/HEP_Collaboration.txt'
+#file = '../data/HEP_Theory.txt'
+#file = '../data/HEP_Collaboration.txt'
+file = '../data/AstroPh.txt'
 
 real_network = UndirectedNetwork.fromfile(file)
 

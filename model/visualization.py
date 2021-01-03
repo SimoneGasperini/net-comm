@@ -46,7 +46,7 @@ def draw_communities_graph (unet, partition, ax=None,
             comm_i = communities[i]
             comm_j = communities[j]
 
-            if len(unet._edges_between(comm_i,comm_j)) > 0:
+            if len(unet._edges_between_comms(comm_i,comm_j)) > 0:
                 matrix[i][j] = matrix[j][i] = 1
 
     node_size = np.array([len(communities[i]) / unet.number_of_nodes * scale_size

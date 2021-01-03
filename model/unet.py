@@ -72,6 +72,10 @@ class UndirectedNetwork:
         return [(u, v) for u in comm for v in comm & set(self.edge_dict[u])]
 
 
+    def _edges_between_comms (self, comm1, comm2):
+        return [(u,v) for u in comm1 for v in comm2 & set(self.edge_dict[u])]
+
+
     def _totdegree_of_comm (self, comm):
 
         return np.sum([len(self.edge_dict[u]) for u in comm])
