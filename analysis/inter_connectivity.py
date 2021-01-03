@@ -74,7 +74,7 @@ plt.style.use('seaborn-paper')
 fig, ax = plt.subplots(figsize=(8,6))
 
 cols1 = ['red', 'blue', 'green']
-cols2 = ['#ff762d', '#2b8eff', '#44e000']
+cols2 = ['#ffb33b', '#2b8eff', '#44e000']
 labs = [f'p = {p}' for p in probabilities]
 
 for i in range(len(probabilities)):

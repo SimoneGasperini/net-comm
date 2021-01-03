@@ -40,9 +40,9 @@ def run_simulation(intra_edges, points, blocks, n, p):
 points = 100
 blocks = 5
 n = 100
-probabilities = [0.02, 0.03, 0.04]
+probabilities = [0.002, 0.006, 0.01]
 
-intra_edges = np.linspace(300, 4950, points).astype(int)
+intra_edges = np.linspace(150, 4000, points).astype(int)
 
 mod1_list = []
 mod2_list = []
@@ -63,7 +63,7 @@ plt.style.use('seaborn-paper')
 fig, ax = plt.subplots(figsize=(8,6))
 
 cols1 = ['red', 'blue', 'green']
-cols2 = ['#ff762d', '#2b8eff', '#44e000']
+cols2 = ['#ffb33b', '#2b8eff', '#44e000']
 labs = [f'p = {p}' for p in probabilities]
 
 for j in range(len(probabilities)):
