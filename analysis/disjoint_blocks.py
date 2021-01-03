@@ -49,7 +49,7 @@ for c in comms:
 plt.style.use('seaborn-paper')
 
 
-fig, ax = plt.subplots(figsize=(8,8))
+fig, ax = plt.subplots(figsize=(8,6))
 
 f = lambda x : 1 - 1 / x
 x = np.linspace(comms[0], comms[-1], num=1000)
@@ -69,3 +69,7 @@ for ty in ax.yaxis.get_major_ticks():
 
 plt.grid()
 plt.show()
+
+
+#%%
+fig.savefig('../images/disjoint_blocks.pdf', bbox_inches='tight', dpi=1200)

@@ -7,9 +7,11 @@ from model.unet import UndirectedNetwork
 from model.visualization import draw_communities_graph, draw_communities_barplot
 
 
-#file = '../data/deezer.txt'
-#file = '../data/facebook.txt'
-file = '../data/General_Relativity.txt'
+#name = 'deezer'
+#name = 'facebook'
+name = 'General_Relativity'
+
+file = '../data/' + name + '.txt'
 
 network = UndirectedNetwork.fromfile(file)
 
@@ -30,12 +32,18 @@ draw_communities_graph(unet=network, partition=part, ax=ax, min_size=15, scale_s
 
 plt.show()
 
+#%%
+fig.savefig('../images/communities_graph_' + name + '.pdf', bbox_inches='tight', dpi=1200)
+
 
 #%%
 plt.style.use('seaborn-paper')
 
 
-fig, ax = plt.subplots(figsize=(8,8))
+fig, ax = plt.subplots(figsize=(8,6))
 draw_communities_barplot(unet=network, partition=part, ax=ax, min_size=15, scale='log')
 
 plt.show()
+
+#%%
+fig.savefig('../images/communities_barplot_' + name + '.pdf', bbox_inches='tight', dpi=1200)

@@ -71,33 +71,54 @@ for i in range(1, simulations+1):
 plt.style.use('seaborn-paper')
 
 
-fig, (ax1,ax2) = plt.subplots(nrows=2, figsize=(8,10), sharex=True)
+fig, ax = plt.subplots(figsize=(8,6))
 
-ax1.axhline(y=mu_n, color='black', linestyle='--', label='mean')
-ax1.violinplot(nodes_distributions, positions=np.arange(simulations))
+ax.axhline(y=mu_n, color='black', linestyle='--', label='mean')
+ax.violinplot(nodes_distributions, positions=np.arange(simulations))
 
-ax1.get_xaxis().set_visible(False)
-ax1.set_ylabel('sizes of blocks', fontsize=14)
-ax1.legend(fontsize=12, loc='lower left')
+ax.set_xlabel('simulation', fontsize=14)
+ax.set_ylabel('sizes of blocks', fontsize=14)
+ax.legend(fontsize=12, loc='lower left')
 
-mean_M = (mu_n * (mu_n - 1) / 2) * blocks + np.sum(edge_matrix) / 2
-f = lambda x, y : 1 - x / y - 1 / x
-ax2.axhline(y=f(blocks, mean_M), color='black', linestyle='--', label='homogeneous')
-ax2.scatter(np.arange(simulations), mod1, marker='+', s=50, color='green', label='natural partition')
-ax2.scatter(np.arange(simulations), mod2, marker='o', s=20, color='red', label='detected partition')
+for tx in ax.xaxis.get_major_ticks():
+    tx.label.set_fontsize(12)
 
-ax2.set_ylim(bottom=0., top=1.)
-ax2.set_xlabel('simulation', fontsize=14)
-ax2.set_ylabel('modularity', fontsize=14)
-ax2.legend(fontsize=12, loc='lower left')
-
-for ty in ax1.yaxis.get_major_ticks():
-    ty.label.set_fontsize(12)
-
-for ty in ax2.xaxis.get_major_ticks():
-    ty.label.set_fontsize(12)
-
-for ty in ax2.yaxis.get_major_ticks():
+for ty in ax.yaxis.get_major_ticks():
     ty.label.set_fontsize(12)
 
 plt.show()
+
+
+#%%
+fig.savefig('../images/sizes_distributions.pdf', bbox_inches='tight', dpi=1200)
+
+
+#%%
+plt.style.use('seaborn-paper')
+
+
+fig, ax = plt.subplots(figsize=(8,6))
+
+mean_M = (mu_n * (mu_n - 1) / 2) * blocks + np.sum(edge_matrix) / 2
+f = lambda x, y : 1 - x / y - 1 / x
+ax.axhline(y=f(blocks, mean_M), color='black', linestyle='--', label='homogeneous')
+ax.scatter(np.arange(simulations), mod1, marker='+', s=50, color='green', label='natural partition')
+ax.scatter(np.arange(simulations), mod2, marker='o', s=20, color='red', label='detected partition')
+
+ax.set_ylim(bottom=0., top=1.)
+ax.set_xlabel('simulation', fontsize=14)
+ax.set_ylabel('modularity', fontsize=14)
+ax.legend(fontsize=12, loc='lower left')
+
+for tx in ax.xaxis.get_major_ticks():
+    tx.label.set_fontsize(12)
+
+for ty in ax.yaxis.get_major_ticks():
+    ty.label.set_fontsize(12)
+
+plt.grid()
+plt.show()
+
+
+#%%
+fig.savefig('../images/blocks_heterogeneity.pdf', bbox_inches='tight', dpi=1200)

@@ -8,9 +8,9 @@ from model.erdosrenyi_blocks import ErdosRenyiBlocks
 from time import time
 
 
-simulations = 30
+simulations = 20
 blocks = 2
-n_i = 200
+n_i = 500
 n_f = 2000
 prob_within = 0.1
 prob_between = 0.005
@@ -50,7 +50,7 @@ def parabola (x, pars):
 
 fit_function = parabola(x=nodes, pars=pars)
 
-fig, ax = plt.subplots(figsize=(8,8))
+fig, ax = plt.subplots(figsize=(8,6))
 
 ax.scatter(nodes, times, marker='o', color='red', label='simulation')
 ax.plot(nodes, fit_function, label='quadratic fit')
@@ -67,3 +67,7 @@ for ty in ax.yaxis.get_major_ticks():
 
 plt.grid()
 plt.show()
+
+
+#%%
+fig.savefig('../images/clustering_time.pdf', bbox_inches='tight', dpi=1200)

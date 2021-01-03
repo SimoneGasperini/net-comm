@@ -71,7 +71,7 @@ for p in probabilities:
 plt.style.use('seaborn-paper')
 
 
-fig, ax = plt.subplots(figsize=(8,8))
+fig, ax = plt.subplots(figsize=(8,6))
 
 cols1 = ['red', 'blue', 'green']
 cols2 = ['#ff762d', '#2b8eff', '#44e000']
@@ -82,8 +82,8 @@ for i in range(len(probabilities)):
     ax.scatter(inter_edges1, mod_list[i], s=20, color=cols2[i], label=labs[i])
 
 ax.set_ylim(bottom=0.0, top=1.0)
-ax.set_xlabel('inter-blocks edges', fontsize=16)
-ax.set_ylabel('modularity', fontsize=16)
+ax.set_xlabel('inter-blocks edges', fontsize=14)
+ax.set_ylabel('modularity', fontsize=14)
 ax.legend(fontsize=12, loc='upper right')
 
 for tx in ax.xaxis.get_major_ticks():
@@ -95,8 +95,15 @@ for ty in ax.yaxis.get_major_ticks():
 plt.grid()
 plt.show()
 
+#%%
+fig.savefig('../images/inter_connectivity1.pdf', bbox_inches='tight', dpi=1200)
 
-fig, ax = plt.subplots(figsize=(8,8))
+
+#%%
+plt.style.use('seaborn-paper')
+
+
+fig, ax = plt.subplots(figsize=(8,6))
 
 for j in range(len(probabilities)):
 
@@ -104,8 +111,8 @@ for j in range(len(probabilities)):
     ax.scatter(inter_edges2, mod2_list[j], s=20, color=cols2[j], label=labs[j])
 
 ax.set_ylim(bottom=0.0, top=1.0)
-ax.set_xlabel('inter-blocks edges', fontsize=16)
-ax.set_ylabel('modularity', fontsize=16)
+ax.set_xlabel('inter-blocks edges', fontsize=14)
+ax.set_ylabel('modularity', fontsize=14)
 
 ax.legend(fontsize=12, loc='upper right',  ncol=2,
           title='natural partition - detected partition', title_fontsize=12)
@@ -118,3 +125,6 @@ for ty in ax.yaxis.get_major_ticks():
 
 ax.grid()
 plt.show()
+
+#%%
+fig.savefig('../images/inter_connectivity2.pdf', bbox_inches='tight', dpi=1200)

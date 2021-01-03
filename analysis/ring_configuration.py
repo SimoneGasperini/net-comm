@@ -78,7 +78,7 @@ for c in comms:
 plt.style.use('seaborn-paper')
 
 
-fig, ax = plt.subplots(figsize=(8,8))
+fig, ax = plt.subplots(figsize=(8,6))
 
 c_max = np.sqrt(M)
 ax.axvline(x=c_max, color='black', linestyle='--')
@@ -108,3 +108,7 @@ for ty in ax.yaxis.get_major_ticks():
 
 plt.grid()
 plt.show()
+
+
+#%%
+fig.savefig('../images/ring_configuration.pdf', bbox_inches='tight', dpi=1200)

@@ -7,7 +7,7 @@ from model.visualization import draw
 
 
 blocks = 4
-blocks_sizes = np.array([np.random.randint(300,600) for i in range(blocks)])
+blocks_sizes = np.array([np.random.randint(200,600) for i in range(blocks)])
 prob_within = 0.1
 prob_between = 0.002
 
@@ -28,10 +28,16 @@ modularity = er_blocks.modularity(partition)
 print(f"\nModularity = {modularity}")
 
 
-fig, ax = plt.subplots(figsize=(8,8))
-draw(er_blocks, partition, ax=ax)
+fig1, ax1 = plt.subplots(figsize=(8,8))
+draw(er_blocks, partition, ax=ax1)
 plt.show()
 
-fig, ax = plt.subplots(figsize=(8,8))
-er_blocks.show(partition, ax=ax)
+fig2, ax2 = plt.subplots(figsize=(8,8))
+er_blocks.show(partition, ax=ax2, cmap='binary')
 plt.show()
+
+
+#%%
+fig1.savefig('images/toy_model.pdf', bbox_inches='tight', dpi=1200)
+
+fig2.savefig('images/random_blocks.pdf', bbox_inches='tight', dpi=1200)
