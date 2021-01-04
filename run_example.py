@@ -9,7 +9,7 @@ from model.visualization import draw
 blocks = 4
 blocks_sizes = np.array([np.random.randint(100,300) for i in range(blocks)])
 prob_within = 0.08
-prob_between = 0.0005
+prob_between = 0.001
 
 prob_matrix = np.empty(shape=(blocks,blocks))
 
@@ -29,15 +29,15 @@ print(f"\nModularity = {modularity}")
 
 
 fig1, ax1 = plt.subplots(figsize=(8,8))
-draw(er_blocks, partition, ax=ax1, cmap='plasma')
+draw(er_blocks, partition, ax=ax1, cmap='hot')
 plt.show()
 
 fig2, ax2 = plt.subplots(figsize=(8,8))
-er_blocks.show(partition, ax=ax2, cmap='plasma')
+er_blocks.show(partition, ax=ax2, cmap='hot')
 plt.show()
 
 
 #%%
-fig1.savefig('images/toy_model.pdf', bbox_inches='tight', dpi=1200)
+fig1.savefig('images/toy_model.pdf', bbox_inches='tight')
 
-fig2.savefig('images/random_blocks.pdf', bbox_inches='tight', dpi=1200)
+fig2.savefig('images/random_blocks.pdf', bbox_inches='tight')

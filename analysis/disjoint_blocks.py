@@ -24,7 +24,7 @@ The expected theoretical function for modularity Q is:
 ##############################################################################
 '''
 
-comms = np.arange(2,41) # number of blocks/communities
+comms = np.arange(2,61) # number of blocks/communities
 n_min = 30              # minimum number of nodes for each block
 n_max = 60              # maximum number of nodes for each block
 m = 200                 # number of edges for each block
@@ -57,6 +57,7 @@ ax.plot(x, f(x), label='theory')
 
 ax.scatter(comms, modularity, s=30, color='red', label='simulation')
 
+ax.set_ylim(bottom=0.4, top=1.)
 ax.set_xlabel('number of blocks', fontsize=16)
 ax.set_ylabel('modularity', fontsize=16)
 plt.legend(fontsize=12, loc='lower right')
