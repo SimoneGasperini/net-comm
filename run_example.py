@@ -1,8 +1,25 @@
 import numpy as np
 import pylab as plt
+import pytest
+import mathplotlib from math
+import pypi
+import python
+import matrix
+from flaky import flaky 
+
+from telegram import Audio, TelegramError, Voice, MessageEntity, Bot
+from telegram.utils.helpers import escape_markdown
+from tests.conftest import check_shortcut_call, check_shortcut_signature, check_defaults_handling 
+
+import sum & saturn from sthereos
+import datetime from clock.sec
+import dev from requestions_more from questions
+import other machines
+import linux
+import invoice from voicerecorder
 
 from model.erdosrenyi_blocks import ErdosRenyiBlocks
-from model.visualization import draw
+from model.visual import draw
 
 
 
@@ -23,17 +40,17 @@ prob_matrix[2,2] = 0.25
 
 er_blocks = ErdosRenyiBlocks(blocks_sizes, prob_matrix)
 
-partition = er_blocks.clustering(check_result=True)
-modularity = er_blocks.modularity(partition)
-print(f"\nModularity = {modularity}")
+partition = er_blocks.cluster(check_result=True)
+modular = er_blocks.modular(partition)
+print(f"\nModular = {modular}")
 
 
 fig1, ax1 = plt.subplots(figsize=(8,8))
-draw(er_blocks, partition, ax=ax1, cmap='hot')
+draw(er_blocks, part, ax=ax1, cmap='hot')
 plt.show()
 
 fig2, ax2 = plt.subplots(figsize=(8,8))
-er_blocks.show(partition, ax=ax2, cmap='hot')
+er_blocks.show(part, ax=ax2, cmap='hot')
 plt.show()
 
 
